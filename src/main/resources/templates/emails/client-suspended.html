@@ -1,0 +1,58 @@
+<!-- src/main/resources/templates/emails/client-suspended.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style th:replace="~{emails/base-email :: head}"></style>
+</head>
+<body>
+<div class="email-container">
+    <div class="email-header" style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);">
+        <h1>URGENT: Account Suspended</h1>
+    </div>
+
+    <div class="email-body">
+        <p>Dear <strong th:text="${clientName}">Client</strong> User,</p>
+
+        <div class="alert">
+            <p style="margin: 0; font-size: 16px;"><strong>Your company account has been SUSPENDED.</strong></p>
+        </div>
+
+        <div class="info-box">
+            <h3>Suspension Details</h3>
+            <p><strong>Company:</strong> <span th:text="${companyName}">Company Name</span></p>
+            <p><strong>Suspended on:</strong> <span th:text="${suspendedAt}">Date</span></p>
+        </div>
+
+        <div class="divider"></div>
+
+        <p><strong>Reason:</strong></p>
+        <p th:text="${reason}">Suspension reason</p>
+
+        <div class="divider"></div>
+
+        <p><strong>Impact on your account:</strong></p>
+        <ul style="color: #991B1B;">
+            <li>You cannot login to the system</li>
+            <li>All tickets are now read-only</li>
+            <li>No new tickets can be created</li>
+            <li>All users in your company are affected</li>
+        </ul>
+
+        <div class="divider"></div>
+
+        <p><strong>What to do next:</strong></p>
+        <p>To resolve this issue and restore access, please contact:</p>
+        <ul>
+            <li>Email: support@ticketsystem.com</li>
+            <li>Phone: +212 XXX-XXXX</li>
+        </ul>
+    </div>
+
+    <div class="email-footer">
+        <p>&copy; 2026 TicketFlow. All rights reserved.</p>
+        <p>This is an automated message, please do not reply to this email.</p>
+    </div>
+</div>
+</body>
+</html>

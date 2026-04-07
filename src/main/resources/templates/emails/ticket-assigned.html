@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style th:replace="~{emails/base-email :: head}"></style>
+</head>
+<body>
+<div class="email-container">
+    <div class="email-header">
+        <h1>New Ticket Assigned to You</h1>
+    </div>
+
+    <div class="email-body">
+        <p>Hello <strong th:text="${managerName}">Manager</strong>,</p>
+
+        <p>A new support ticket has been assigned to you for review and resolution.</p>
+
+        <div class="info-box">
+            <h3>Ticket Details</h3>
+            <p><strong>Ticket ID:</strong> #<span th:text="${ticketId}">123</span></p>
+            <p><strong>Title:</strong> <span th:text="${title}">Ticket Title</span></p>
+            <p><strong>Status:</strong> <span th:text="${status}">IN_PROGRESS</span></p>
+            <p><strong>Created by:</strong> <span th:text="${createdBy}">User</span></p>
+            <p><strong>Assigned:</strong> <span th:text="${assignedAt}">Date</span></p>
+        </div>
+
+        <div class="divider"></div>
+
+        <p><strong>Description:</strong></p>
+        <p th:text="${description}">Ticket description</p>
+
+        <div class="divider"></div>
+
+        <p>Please review this ticket and take appropriate action as soon as possible.</p>
+
+        <a th:href="${ticketUrl}" class="button">View & Manage Ticket</a>
+    </div>
+
+    <div class="email-footer">
+        <p>&copy; 2026 TicketFlow. All rights reserved.</p>
+        <p>This is an automated message, please do not reply to this email.</p>
+    </div>
+</div>
+</body>
+</html>

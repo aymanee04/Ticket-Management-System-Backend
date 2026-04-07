@@ -1,0 +1,63 @@
+<!-- src/main/resources/templates/emails/welcome-user.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style th:replace="~{emails/base-email :: head}"></style>
+</head>
+<body>
+<div class="email-container">
+    <div class="email-header">
+        <h1>Welcome to TicketFlow!</h1>
+    </div>
+
+    <div class="email-body">
+        <p>Hello <strong th:text="${userName}">User</strong>,</p>
+
+        <p>Welcome! Your account has been successfully created on our Ticket Management System.</p>
+
+        <div class="success">
+            <p style="margin: 0;">Your account is now active and ready to use.</p>
+        </div>
+
+        <div class="info-box">
+            <h3>Account Details</h3>
+            <p><strong>Email:</strong> <span th:text="${email}">user@example.com</span></p>
+            <p><strong>Temporary Password:</strong> <code th:text="${tempPassword}" style="background: #FEE2E2; padding: 2px 6px; border-radius: 4px; color: #DC2626;">password123</code></p>
+            <p><strong>Role:</strong> <span th:text="${role}">USER</span></p>
+            <p><strong>Company:</strong> <span th:text="${company}">Company Name</span></p>
+        </div>
+
+        <div class="alert">
+            <p style="margin: 0 0 10px 0;"><strong>IMPORTANT - Security Notice</strong></p>
+            <p style="margin: 0; font-size: 14px;">Please change your password immediately after your first login for security reasons.</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <p><strong>Getting Started:</strong></p>
+        <ol style="color: #4B5563;">
+            <li>Click the button below to login</li>
+            <li>Use the credentials provided above</li>
+            <li>Change your password in Profile → Password</li>
+            <li>Start creating and managing tickets!</li>
+        </ol>
+
+        <a th:href="${loginUrl}" class="button">Login to Your Account</a>
+
+        <div class="divider"></div>
+
+        <p style="color: #6B7280; font-size: 14px;">If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
+    </div>
+    <div class="divider"></div>
+    <p style="color: #6B7280; font-size: 14px;"><strong>For immediate assistance:</strong><br>
+        Email: support@ticketsystem.com<br>
+        Phone: +212 XXX-XXXX</p>
+
+    <div class="email-footer">
+        <p>&copy; 2026 TicketFlow. All rights reserved.</p>
+        <p>This is an automated message, please do not reply to this email.</p>
+    </div>
+</div>
+</body>
+</html>

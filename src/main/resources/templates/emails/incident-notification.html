@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style th:replace="~{emails/base-email :: head}"></style>
+</head>
+<body>
+<div class="email-container">
+    <div class="email-header" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
+        <h1>SYSTEM INCIDENT ALERT</h1>
+    </div>
+
+    <div class="email-body">
+        <p><strong>URGENT SYSTEM NOTIFICATION</strong></p>
+
+        <div class="alert" style="background-color: #FEF3C7; border-color: #F59E0B; color: #92400E;">
+            <p style="margin: 0; font-size: 16px;"><strong>A system-wide incident has been reported that may affect your services.</strong></p>
+        </div>
+
+        <div class="info-box">
+            <h3>Incident Details</h3>
+            <p><strong>Incident ID:</strong> #<span th:text="${incidentId}">123</span></p>
+            <p><strong>Title:</strong> <span th:text="${title}">Incident Title</span></p>
+            <p><strong>Reported by:</strong> <span th:text="${reportedBy}">Admin</span></p>
+            <p><strong>Reported on:</strong> <span th:text="${reportedAt}">Date</span></p>
+            <p><strong>Current Status:</strong> <span th:text="${status}">IN_PROGRESS</span></p>
+        </div>
+
+        <div class="divider"></div>
+
+        <p><strong>Description:</strong></p>
+        <p th:text="${description}">Incident description</p>
+
+        <div class="divider"></div>
+
+        <p><strong>What this means:</strong></p>
+        <ul style="color: #92400E;">
+            <li>Multiple clients may be affected</li>
+            <li>Some services may be unavailable or degraded</li>
+            <li>Our technical team is actively working on resolution</li>
+        </ul>
+
+        <div class="divider"></div>
+
+        <p>You will receive updates as we progress toward resolution. We apologize for any inconvenience.</p>
+
+        <a th:href="${ticketUrl}" class="button" style="background-color: #F59E0B;">View Incident Status</a>
+
+        <div class="divider"></div>
+        <p style="color: #6B7280; font-size: 14px;"><strong>For immediate assistance:</strong><br>
+            Email: support@ticketsystem.com<br>
+            Phone: +212 XXX-XXXX</p>
+
+    </div>
+
+    <div class="email-footer">
+        <p>&copy; 2026 TicketFlow. All rights reserved.</p>
+        <p>This is an automated message, please do not reply to this email.</p>
+    </div>
+</div>
+</body>
+</html>

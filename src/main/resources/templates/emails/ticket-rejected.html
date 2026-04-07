@@ -1,0 +1,51 @@
+<!-- src/main/resources/templates/emails/ticket-rejected.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style th:replace="~{emails/base-email :: head}"></style>
+</head>
+<body>
+<div class="email-container">
+    <div class="email-header" style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);">
+        <h1>Ticket Rejected</h1>
+    </div>
+
+    <div class="email-body">
+        <p>Hello <strong th:text="${userName}">User</strong>,</p>
+
+        <div class="alert">
+            <p style="margin: 0;">Your ticket has been reviewed and rejected.</p>
+        </div>
+
+        <div class="info-box">
+            <h3>Ticket Details</h3>
+            <p><strong>Ticket ID:</strong> #<span th:text="${ticketId}">123</span></p>
+            <p><strong>Title:</strong> <span th:text="${title}">Ticket Title</span></p>
+            <p><strong>Rejected by:</strong> <span th:text="${rejectedBy}">Manager</span></p>
+            <p><strong>Rejected on:</strong> <span th:text="${rejectedAt}">Date</span></p>
+        </div>
+
+        <div class="divider"></div>
+
+        <p><strong>Rejection Reason:</strong></p>
+        <p th:text="${reason}">Rejection reason</p>
+
+        <div class="divider"></div>
+
+        <p>If you believe this decision was made in error or you need clarification, please contact our support team.</p>
+
+        <a th:href="${ticketUrl}" class="button" style="background-color: #EF4444;">View Ticket</a>
+    </div>
+
+    <p style="color: #6B7280; font-size: 14px;"><strong>For immediate assistance:</strong><br>
+        Email: support@ticketsystem.com<br>
+        Phone: +212 XXX-XXXX</p>
+
+    <div class="email-footer">
+        <p>&copy; 2026 TicketFlow. All rights reserved.</p>
+        <p>This is an automated message, please do not reply to this email.</p>
+    </div>
+</div>
+</body>
+</html>

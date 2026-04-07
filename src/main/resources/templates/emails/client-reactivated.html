@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style th:replace="~{emails/base-email :: head}"></style>
+</head>
+<body>
+<div class="email-container">
+    <div class="email-header" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+        <h1>Account Reactivated</h1>
+    </div>
+
+    <div class="email-body">
+        <p>Dear <strong th:text="${clientName}">Client</strong> User,</p>
+
+        <div class="success">
+            <p style="margin: 0; font-size: 16px;"><strong>Great news! Your company account has been reactivated.</strong></p>
+        </div>
+
+        <div class="info-box">
+            <h3>Reactivation Details</h3>
+            <p><strong>Company:</strong> <span th:text="${companyName}">Company Name</span></p>
+            <p><strong>Reactivated on:</strong> <span th:text="${reactivatedAt}">Date</span></p>
+        </div>
+
+        <div class="divider"></div>
+
+        <p><strong>What this means for you:</strong></p>
+        <ul style="color: #065F46;">
+            <li>Full access to the system restored</li>
+            <li>You can login with your credentials</li>
+            <li>Create and manage tickets</li>
+            <li>All features are now available</li>
+        </ul>
+
+        <div class="divider"></div>
+
+        <p>Welcome back! You can now login to your account.</p>
+
+        <a th:href="${loginUrl}" class="button" style="background-color: #10B981;">Login to Your Account</a>
+
+        <p style="color: #6B7280; font-size: 14px; margin-top: 20px;">If you have any questions, please contact our support team.</p>
+    </div>
+
+    <div class="email-footer">
+        <p>&copy; 2026 TicketFlow. All rights reserved.</p>
+        <p>This is an automated message, please do not reply to this email.</p>
+    </div>
+</div>
+</body>
+</html>

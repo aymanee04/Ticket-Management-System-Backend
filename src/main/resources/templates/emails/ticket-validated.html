@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style th:replace="~{emails/base-email :: head}"></style>
+</head>
+<body>
+<div class="email-container">
+    <div class="email-header">
+        <h1>Ticket Validated & Resolved</h1>
+    </div>
+
+    <div class="email-body">
+        <p>Hello <strong th:text="${userName}">User</strong>,</p>
+
+        <div class="success">
+            <p style="margin: 0;"><strong>Great news!</strong> Your ticket has been validated and marked as resolved.</p>
+        </div>
+
+        <div class="info-box">
+            <h3>Ticket Details</h3>
+            <p><strong>Ticket ID:</strong> #<span th:text="${ticketId}">123</span></p>
+            <p><strong>Title:</strong> <span th:text="${title}">Ticket Title</span></p>
+            <p><strong>Validated by:</strong> <span th:text="${validatedBy}">Manager</span></p>
+            <p><strong>Validated on:</strong> <span th:text="${validatedAt}">Date</span></p>
+        </div>
+
+        <div class="divider"></div>
+
+        <p><strong>Resolution Comment:</strong></p>
+        <p th:text="${comment}">Resolution comment</p>
+
+        <div class="divider"></div>
+
+        <p>If you have any further questions or if the issue persists, please don't hesitate to create a new ticket.</p>
+
+        <a th:href="${ticketUrl}" class="button">View Ticket</a>
+    </div>
+
+    <div class="email-footer">
+        <p>&copy; 2026 TicketFlow. All rights reserved.</p>
+        <p>This is an automated message, please do not reply to this email.</p>
+    </div>
+</div>
+</body>
+</html>
