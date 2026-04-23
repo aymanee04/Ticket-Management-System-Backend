@@ -1,16 +1,16 @@
 package ma.bank.ticketmanagementsystembackend.services;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import ma.bank.ticketmanagementsystembackend.dtos.dto.TicketDTO;
 import ma.bank.ticketmanagementsystembackend.entities.*;
+import ma.bank.ticketmanagementsystembackend.exceptions.BusinessException;
+import ma.bank.ticketmanagementsystembackend.exceptions.ResourceNotFoundException;
 import ma.bank.ticketmanagementsystembackend.mappers.TicketMapper;
 import ma.bank.ticketmanagementsystembackend.repositories.ClientRepository;
 import ma.bank.ticketmanagementsystembackend.repositories.TicketRepository;
 import ma.bank.ticketmanagementsystembackend.repositories.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,11 +18,12 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class TicketServiceImpl implements TicketService {
+
+    private static final int SOFT_DELETE_DAYS = 5;
 
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
@@ -30,24 +31,23 @@ public class TicketServiceImpl implements TicketService {
     private final TicketMapper ticketMapper;
     private final EmailService emailService;
 
+    //  Create
+
     @Override
     @Transactional
     public TicketDTO createTicket(String title, String description, Long createdById, Long clientId) {
-        AppUser creator = userRepository.findById(createdById)
-                .orElseThrow(() -> new RuntimeException("Creator not found"));
+        AppUser creator = findUserById(createdById, "Creator not found");
 
         if (creator.getClient() != null && creator.getClient().getStatus() != ClientStatus.ACTIVE) {
-            throw new RuntimeException(
-                    "Cannot create tickets. Company account is " +
-                            creator.getClient().getStatus()
-            );
+            throw new BusinessException(
+                    "Cannot create tickets. Company account is " + creator.getClient().getStatus());
         }
 
-        Client client = clientRepository.findById(clientId)
-                .orElseThrow(() -> new RuntimeException("Client not found"));
+        Client client = findClientById(clientId);
 
         if (client.getStatus() != ClientStatus.ACTIVE) {
-            throw new RuntimeException("Cannot create ticket for inactive client: " + client.getName());
+            throw new BusinessException(
+                    "Cannot create ticket for non active client: " + client.getName());
         }
 
         Ticket ticket = Ticket.builder()
@@ -59,30 +59,30 @@ public class TicketServiceImpl implements TicketService {
                 .clients(Set.of(client))
                 .build();
 
-        Ticket savedTicket = ticketRepository.save(ticket);
-        emailService.sendTicketCreatedEmail(savedTicket);
-        return ticketMapper.toDTO(savedTicket);
+        Ticket saved = ticketRepository.save(ticket);
+        emailService.sendTicketCreatedEmail(saved);
+        return ticketMapper.toDTO(saved);
     }
 
     @Override
     @Transactional
-    public TicketDTO createMultiClientTicket(String title, String description, Long createdById, Set<Long> clientIds) {
-        AppUser creator = userRepository.findById(createdById)
-                .orElseThrow(() -> new RuntimeException("Creator not found"));
+    public TicketDTO createMultiClientTicket(String title, String description,
+                                             Long createdById, Set<Long> clientIds) {
+        AppUser creator = findUserById(createdById, "Creator not found");
 
         if (clientIds == null || clientIds.isEmpty()) {
-            throw new RuntimeException("At least one client must be specified");
+            throw new BusinessException("At least one client must be specified");
         }
 
         Set<Client> clients = new HashSet<>();
         for (Long clientId : clientIds) {
             Client client = clientRepository.findById(clientId)
-                    .orElseThrow(() -> new RuntimeException("Client not found: " + clientId));
+                    .orElseThrow(() -> new ResourceNotFoundException("Client not found: " + clientId));
 
             if (client.getStatus() != ClientStatus.ACTIVE) {
-                throw new RuntimeException("Cannot create ticket for inactive client: " + client.getName());
+                throw new BusinessException(
+                        "Cannot create ticket non active client " + client.getName());
             }
-
             clients.add(client);
         }
 
@@ -95,41 +95,34 @@ public class TicketServiceImpl implements TicketService {
                 .clients(clients)
                 .build();
 
-        Ticket savedTicket = ticketRepository.save(ticket);
-        emailService.sendIncidentNotification(savedTicket);
-        return ticketMapper.toDTO(savedTicket);
+        Ticket saved = ticketRepository.save(ticket);
+        emailService.sendIncidentNotification(saved);
+        return ticketMapper.toDTO(saved);
     }
+
+    // Ticket Lifecycle
 
     @Override
     @Transactional
     public TicketDTO assignTicket(Long ticketId, Long assignedToId) {
-        Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
-
-        AppUser assignee = userRepository.findById(assignedToId)
-                .orElseThrow(() -> new RuntimeException("Assignee not found"));
+        Ticket ticket = findTicketById(ticketId);
+        AppUser assignee = findUserById(assignedToId, "Assignee not found");
 
         ticket.setAssignedTo(assignee);
         ticket.setUpdatedAt(LocalDateTime.now());
 
-        Ticket assignedTicket = ticketRepository.save(ticket);
-        emailService.sendTicketAssignedEmail(assignedTicket, assignee);
-        return ticketMapper.toDTO(assignedTicket);
+        Ticket saved = ticketRepository.save(ticket);
+        emailService.sendTicketAssignedEmail(saved, assignee);
+        return ticketMapper.toDTO(saved);
     }
 
-    @Transactional
     @Override
+    @Transactional
     public TicketDTO approveTicket(Long ticketId, Long managerId, String comment) {
-        Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+        Ticket ticket = findTicketById(ticketId);
+        AppUser manager = findUserById(managerId, "Manager not found");
 
-        AppUser manager = userRepository.findById(managerId)
-                .orElseThrow(() -> new RuntimeException("Manager not found"));
-
-        if (ticket.getStatus() != TicketStatus.IN_PROGRESS &&
-                ticket.getStatus() != TicketStatus.PENDING_VALIDATION) {
-            throw new RuntimeException("Only IN_PROGRESS or PENDING_VALIDATION tickets can be approved");
-        }
+        requireValidatableStatus(ticket, "approved");
 
         ticket.setStatus(TicketStatus.VALIDATED);
         ticket.setValidatedAt(LocalDateTime.now());
@@ -137,24 +130,18 @@ public class TicketServiceImpl implements TicketService {
         ticket.setValidationComment(comment);
         ticket.setUpdatedAt(LocalDateTime.now());
 
-        Ticket approvedTicket = ticketRepository.save(ticket);
-        emailService.sendTicketValidatedEmail(approvedTicket);
-        return ticketMapper.toDTO(approvedTicket);
+        Ticket saved = ticketRepository.save(ticket);
+        emailService.sendTicketValidatedEmail(saved);
+        return ticketMapper.toDTO(saved);
     }
 
     @Override
     @Transactional
     public TicketDTO rejectTicket(Long ticketId, Long managerId, String comment) {
-        Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+        Ticket ticket = findTicketById(ticketId);
+        AppUser manager = findUserById(managerId, "Manager not found");
 
-        AppUser manager = userRepository.findById(managerId)
-                .orElseThrow(() -> new RuntimeException("Manager not found"));
-
-        if (ticket.getStatus() != TicketStatus.IN_PROGRESS &&
-                ticket.getStatus() != TicketStatus.PENDING_VALIDATION) {
-            throw new RuntimeException("Only IN_PROGRESS or PENDING_VALIDATION tickets can be rejected");
-        }
+        requireValidatableStatus(ticket, "rejected");
 
         ticket.setStatus(TicketStatus.REJECTED);
         ticket.setValidatedAt(LocalDateTime.now());
@@ -162,87 +149,99 @@ public class TicketServiceImpl implements TicketService {
         ticket.setValidationComment(comment);
         ticket.setUpdatedAt(LocalDateTime.now());
 
-        Ticket rejectedTicket = ticketRepository.save(ticket);
-        emailService.sendTicketRejectedEmail(rejectedTicket);
-        return ticketMapper.toDTO(rejectedTicket);
+        Ticket saved = ticketRepository.save(ticket);
+        emailService.sendTicketRejectedEmail(saved);
+        return ticketMapper.toDTO(saved);
     }
 
     @Override
     @Transactional
     public TicketDTO archiveTicket(Long ticketId) {
-        Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+        Ticket ticket = findTicketById(ticketId);
 
         if (ticket.getStatus() != TicketStatus.VALIDATED &&
                 ticket.getStatus() != TicketStatus.REJECTED) {
-            throw new RuntimeException("Only VALIDATED or REJECTED tickets can be archived");
+            throw new BusinessException("Only VALIDATED or REJECTED tickets can be archived");
         }
 
         ticket.setStatus(TicketStatus.ARCHIVED);
         ticket.setUpdatedAt(LocalDateTime.now());
-
-        Ticket archivedTicket = ticketRepository.save(ticket);
-        return ticketMapper.toDTO(archivedTicket);
+        return ticketMapper.toDTO(ticketRepository.save(ticket));
     }
 
     @Override
     @Transactional
     public TicketDTO cancelTicket(Long ticketId) {
-        Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+        Ticket ticket = findTicketById(ticketId);
 
         if (ticket.getStatus() != TicketStatus.IN_PROGRESS &&
                 ticket.getStatus() != TicketStatus.PENDING_VALIDATION) {
-            throw new RuntimeException("Only IN_PROGRESS or PENDING_VALIDATION tickets can be cancelled");
+            throw new BusinessException("Only IN_PROGRESS or PENDING_VALIDATION tickets can be cancelled");
         }
 
         ticket.setStatus(TicketStatus.CANCELLED);
         ticket.setUpdatedAt(LocalDateTime.now());
+//        ticket.setScheduledDeleteAt(LocalDateTime.now().plusDays(SOFT_DELETE_DAYS));
 
-        Ticket canceledTicket = ticketRepository.save(ticket);
-        return ticketMapper.toDTO(canceledTicket);
+        return ticketMapper.toDTO(ticketRepository.save(ticket));
     }
+
+    //  Delete
+
+    @Override
+    @Transactional
+    public void hardDeleteTicket(Long ticketId) {
+        Ticket ticket = findTicketById(ticketId);
+
+        if (ticket.getStatus() != TicketStatus.CANCELLED) {
+            throw new BusinessException(
+                    "Only CANCELLED tickets can be permanently deleted");
+        }
+
+        ticketRepository.delete(ticket);
+    }
+
+    //  Read
 
     @Override
     public TicketDTO getTicketById(Long id) {
-        Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
-        return ticketMapper.toDTO(ticket);
+        return ticketMapper.toDTO(findTicketById(id));
     }
 
     @Override
     public List<TicketDTO> getAllTickets() {
-        return ticketRepository.findAll().stream().map(ticketMapper::toDTO).collect(Collectors.toList());
+        return ticketRepository.findAll().stream().map(ticketMapper::toDTO).toList();
     }
 
     @Override
     public List<TicketDTO> getTicketsByStatus(TicketStatus status) {
-        return ticketRepository.findByStatus(status).stream().map(ticketMapper::toDTO).collect(Collectors.toList());
+        return ticketRepository.findByStatus(status).stream().map(ticketMapper::toDTO).toList();
     }
 
     @Override
     public List<TicketDTO> getTicketsByUserId(Long userId) {
-        return ticketRepository.findTicketByCreatedBy_UserId(userId).stream().map(ticketMapper::toDTO).collect(Collectors.toList());
+        return ticketRepository.findTicketByCreatedBy_UserId(userId)
+                .stream().map(ticketMapper::toDTO).toList();
     }
 
     @Override
     public List<TicketDTO> getTicketsByClient(Long clientId) {
-        return ticketRepository.findByClients_ClientId(clientId).stream().map(ticketMapper::toDTO).collect(Collectors.toList());
+        return ticketRepository.findByClients_ClientId(clientId)
+                .stream().map(ticketMapper::toDTO).toList();
     }
 
     @Override
     public List<TicketDTO> getTicketsAssignedTo(Long userId) {
-        AppUser user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return ticketRepository.findByAssignedTo(user).stream().map(ticketMapper::toDTO).collect(Collectors.toList());
+        AppUser user = findUserById(userId, "User not found");
+        return ticketRepository.findByAssignedTo(user).stream().map(ticketMapper::toDTO).toList();
     }
 
     @Override
     public List<TicketDTO> searchTickets(String searchTerm) {
-        return ticketRepository.searchTickets(searchTerm).stream()
-                .map(ticketMapper::toDTO)
-                .collect(Collectors.toList());
+        return ticketRepository.searchTickets(searchTerm).stream().map(ticketMapper::toDTO).toList();
     }
+
+    // ── Read — paginated ──────────────────────────────────────────────────────
 
     @Override
     public Page<TicketDTO> getAllTicketsWithPagination(Pageable pageable) {
@@ -259,11 +258,9 @@ public class TicketServiceImpl implements TicketService {
         return ticketRepository.searchTickets(searchTerm, pageable).map(ticketMapper::toDTO);
     }
 
-
     @Override
     public Page<TicketDTO> getTicketsByClientId(Long clientId, Pageable pageable) {
-        return ticketRepository.findByClients_ClientId(clientId, pageable)
-                .map(ticketMapper::toDTO);
+        return ticketRepository.findByClients_ClientId(clientId, pageable).map(ticketMapper::toDTO);
     }
 
     @Override
@@ -276,5 +273,70 @@ public class TicketServiceImpl implements TicketService {
     public Page<TicketDTO> getTicketsByStatusAndClient(TicketStatus status, Long clientId, Pageable pageable) {
         return ticketRepository.findByStatusAndClients_ClientId(status, clientId, pageable)
                 .map(ticketMapper::toDTO);
+    }
+
+    //  Role-scoped paginated
+
+    @Override
+    public Page<TicketDTO> getTicketsPagedForUser(AppUser currentUser, Pageable pageable) {
+        if (isAdminOrManager(currentUser)) {
+            return getAllTicketsWithPagination(pageable);
+        }
+        if (currentUser.getClient() != null) {
+            return getTicketsByClientId(currentUser.getClient().getClientId(), pageable);
+        }
+        return Page.empty(pageable);
+    }
+
+    @Override
+    public Page<TicketDTO> getTicketsByStatusPagedForUser(TicketStatus status, AppUser currentUser, Pageable pageable) {
+        if (isAdminOrManager(currentUser)) {
+            return getTicketsByStatusWithPagination(status, pageable);
+        }
+        if (currentUser.getClient() != null) {
+            return getTicketsByStatusAndClient(status, currentUser.getClient().getClientId(), pageable);
+        }
+        return Page.empty(pageable);
+    }
+
+    @Override
+    public Page<TicketDTO> searchTicketsPagedForUser(String q, AppUser currentUser, Pageable pageable) {
+        if (isAdminOrManager(currentUser)) {
+            return searchTicketsWithPagination(q, pageable);
+        }
+        if (currentUser.getClient() != null) {
+            return searchTicketsByClient(q, currentUser.getClient().getClientId(), pageable);
+        }
+        return Page.empty(pageable);
+    }
+
+    //  Private helpers
+
+    private Ticket findTicketById(Long id) {
+        return ticketRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+    }
+
+    private AppUser findUserById(Long id, String message) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(message));
+    }
+
+    private Client findClientById(Long id) {
+        return clientRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Client not found"));
+    }
+
+    private void requireValidatableStatus(Ticket ticket, String action) {
+        if (ticket.getStatus() != TicketStatus.IN_PROGRESS &&
+                ticket.getStatus() != TicketStatus.PENDING_VALIDATION) {
+            throw new BusinessException(
+                    "Only IN_PROGRESS tickets can be " + action);
+        }
+    }
+
+    private boolean isAdminOrManager(AppUser user) {
+        return user.getRoles().contains(Role.ADMIN) ||
+                user.getRoles().contains(Role.MANAGER);
     }
 }

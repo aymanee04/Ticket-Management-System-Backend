@@ -55,6 +55,9 @@ public class Ticket {
     @JoinColumn(name = "validated_by")
     private AppUser validatedBy;
 
+//    @Column(name = "scheduled_delete_at")
+//    private LocalDateTime scheduledDeleteAt;
+
     @ManyToMany
     @JoinTable(
             name = "ticket_client",

@@ -5,10 +5,12 @@ import ma.bank.ticketmanagementsystembackend.entities.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.nio.channels.FileChannel;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -71,5 +73,22 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
             Long clientId,
             Pageable pageable
     );
+
+//    @Modifying
+//    @Query("""
+//            DELETE FROM Ticket t
+//            WHERE t.status = :#{#status}
+//              AND t.scheduledDeleteAt IS NOT NULL
+//              AND t.scheduledDeleteAt < :cutoff
+//            """)
+//    int deleteExpiredCancelledTickets(
+//            @Param("cutoff") LocalDateTime cutoff,
+//            @Param("status") TicketStatus status
+//    );
+//
+//    // Convenience overload called by the scheduler (always passes CANCELLED)
+//    default int deleteExpiredCancelledTickets(LocalDateTime cutoff) {
+//        return deleteExpiredCancelledTickets(cutoff, TicketStatus.CANCELLED);
+//    }
 
 }

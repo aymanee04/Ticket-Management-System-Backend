@@ -1,6 +1,7 @@
 package ma.bank.ticketmanagementsystembackend.services;
 
 import ma.bank.ticketmanagementsystembackend.dtos.dto.TicketDTO;
+import ma.bank.ticketmanagementsystembackend.entities.AppUser;
 import ma.bank.ticketmanagementsystembackend.entities.Ticket;
 import ma.bank.ticketmanagementsystembackend.entities.TicketStatus;
 import org.springframework.data.domain.Page;
@@ -17,6 +18,7 @@ public interface TicketService {
     public TicketDTO rejectTicket(Long ticketId,Long adminId, String comment);
     public TicketDTO archiveTicket(Long ticketId);
     public TicketDTO cancelTicket(Long ticketId);
+    public void hardDeleteTicket(Long ticketId);
     public TicketDTO getTicketById(Long id);
     public List<TicketDTO> getAllTickets();
     public List<TicketDTO> getTicketsByStatus(TicketStatus status);
@@ -32,4 +34,7 @@ public interface TicketService {
     Page<TicketDTO> getTicketsByClientId(Long clientId, Pageable pageable);
     Page<TicketDTO> searchTicketsByClient(String searchTerm, Long clientId, Pageable pageable);
     Page<TicketDTO> getTicketsByStatusAndClient(TicketStatus status, Long clientId, Pageable pageable);
+    public Page<TicketDTO> getTicketsPagedForUser(AppUser currentUser, Pageable pageable);
+    public Page<TicketDTO> getTicketsByStatusPagedForUser(TicketStatus status, AppUser currentUser, Pageable pageable);
+    public Page<TicketDTO> searchTicketsPagedForUser(String q, AppUser currentUser, Pageable pageable);
 }

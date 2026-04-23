@@ -1,51 +1,53 @@
 package ma.bank.ticketmanagementsystembackend.services;
 
+import ma.bank.ticketmanagementsystembackend.dtos.CreateUserRequest;
 import ma.bank.ticketmanagementsystembackend.dtos.UpdateUserRequest;
 import ma.bank.ticketmanagementsystembackend.dtos.dto.AppUserDTO;
 import ma.bank.ticketmanagementsystembackend.entities.AppUser;
 import ma.bank.ticketmanagementsystembackend.entities.Client;
 import ma.bank.ticketmanagementsystembackend.entities.Role;
+import ma.bank.ticketmanagementsystembackend.exceptions.BusinessException;
+import ma.bank.ticketmanagementsystembackend.exceptions.DuplicateResourceException;
+import ma.bank.ticketmanagementsystembackend.exceptions.InvalidPasswordException;
+import ma.bank.ticketmanagementsystembackend.exceptions.ResourceNotFoundException;
 import ma.bank.ticketmanagementsystembackend.mappers.AppUserMapper;
 import ma.bank.ticketmanagementsystembackend.repositories.ClientRepository;
 import ma.bank.ticketmanagementsystembackend.repositories.UserRepository;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
 
-    @Mock
-    private UserRepository userRepository;
-    @Mock
-    private ClientRepository clientRepository;
-    @Mock
-    private EmailService emailService;
-    @Mock
-    private PasswordEncoder passwordEncoder;
-    @Mock
-    private AppUserMapper appUserMapper;
+    @Mock private UserRepository userRepository;
+    @Mock private ClientRepository clientRepository;
+    @Mock private AppUserMapper appUserMapper;
+    @Mock private EmailService emailService;
+    @Mock private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private UserServiceImpl userService;
 
     private AppUser user;
-    private Client client;
     private AppUserDTO userDTO;
-    private UpdateUserRequest updateUserRequest;
-    private Pageable pageable;
+    private Client client;
+    private CreateUserRequest createRequest;
+    private UpdateUserRequest updateRequest;
+
 
     @BeforeEach
     void setUp() {
@@ -55,415 +57,358 @@ class UserServiceImplTest {
 
         user = new AppUser();
         user.setUserId(1L);
-        user.setName("tester");
-        user.setEmail("test@mail.com");
-        user.setPassword("1234");
+        user.setName("Tester");
+        user.setEmail("test@bank.ma");
+        user.setPassword("plain123");
         user.setClient(client);
-
-        updateUserRequest = new UpdateUserRequest();
-        updateUserRequest.setName("QA");
-        updateUserRequest.setEmail("test@gmail.com");
-        updateUserRequest.setPassword("1234");
-        updateUserRequest.setClientId(1L);
 
         userDTO = new AppUserDTO();
         userDTO.setUserId(1L);
-        userDTO.setEmail("test@gmail.com");
-        pageable = PageRequest.of(0, 10);
+        userDTO.setEmail("test@bank.ma");
+
+        createRequest = new CreateUserRequest();
+        createRequest.setName("Tester");
+        createRequest.setEmail("test@bank.ma");
+        createRequest.setPassword("plain123");
+        createRequest.setJobTitle("Developer");
+        createRequest.setClientId(1L);
+
+        updateRequest = new UpdateUserRequest();
+        updateRequest.setName("Updated Name");
+        updateRequest.setEmail("updated@bank.ma");
+        updateRequest.setJobTitle("Senior Developer");
     }
 
-    @Nested
-    @DisplayName("Create User Test")
-    class CreateUserTest{
-        @Test
-        @DisplayName("Should Create User Successfully")
-        void shouldCreateUser(){
-            when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
-            when(userRepository.existsByEmail(user.getEmail())).thenReturn(false);
-            when(passwordEncoder.encode(user.getPassword())).thenReturn("encodedPassword");
-            when(userRepository.save(user)).thenReturn(user);
-            when(appUserMapper.toDTO(user)).thenReturn(userDTO);
-
-            AppUserDTO result = userService.createUserInternal(user);
-
-            assertNotNull(result);
-            assertEquals("test@gmail.com", result.getEmail());
-
-            assertTrue(user.getRoles().contains(Role.USER));
-            assertEquals("encodedPassword", user.getPassword());
-
-            verify(clientRepository).findById(1L);
-            verify(userRepository).existsByEmail("test@mail.com");
-            verify(emailService).sendWelcomeEmail(user, "1234");
-            verify(passwordEncoder).encode("1234");
-            verify(userRepository,times(1)).save(user);
-            verify(appUserMapper).toDTO(user);
-        }
-
-        @Test
-        @DisplayName("Should Throw Exception when client not found")
-        void shouldThrowClientNotFound(){
-            when(clientRepository.findById(1L)).thenReturn(Optional.empty());
-
-            RuntimeException exception= assertThrows(
-                    RuntimeException.class,
-                    () -> userService.createUserInternal(user)
-            );
-            assertEquals("Client not found",exception.getMessage());
-            verify(clientRepository).findById(1L);
-            verify(userRepository, never()).save(any());
-        }
-
-        @Test
-        @DisplayName("Should Throw Exception when email already exists")
-        void shouldThrowEmailExistsException(){
-            when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
-            when(userRepository.existsByEmail("test@mail.com")).thenReturn(true);
-
-            RuntimeException exception= assertThrows(
-                    RuntimeException.class,
-                    () -> userService.createUserInternal(user)
-            );
-
-            assertEquals("Email already exists", exception.getMessage());
-
-            verify(userRepository).existsByEmail("test@mail.com");
-            verify(userRepository, never()).save(any());
-        }
-    }
+    //  createUser
 
     @Nested
-    @DisplayName("Update user test")
-    class UpdateUserTest{
+    @DisplayName("createUser")
+    class CreateUser {
+
         @Test
-        @DisplayName("Should update user successfully")
-        void shouldUpdateUser(){
-            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        @DisplayName("creates user, encodes password, sends welcome email, adds USER role")
+        void success() {
+            when(userRepository.existsByEmail("test@bank.ma")).thenReturn(false);
+            when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+            when(passwordEncoder.encode("plain123")).thenReturn("encoded123");
             when(userRepository.save(any(AppUser.class))).thenReturn(user);
             when(appUserMapper.toDTO(user)).thenReturn(userDTO);
 
-            AppUserDTO updatedUser = userService.updateUser(1L, updateUserRequest);
+            AppUserDTO result = userService.createUser(createRequest);
 
-            assertNotNull(updatedUser);
+            assertNotNull(result);
+            verify(userRepository).existsByEmail("test@bank.ma");
+            verify(clientRepository).findById(1L);
+            // welcome email must be called before encoding (plain password still available)
+            verify(emailService).sendWelcomeEmail(any(AppUser.class), eq("plain123"));
+            verify(passwordEncoder).encode("plain123");
+            verify(userRepository).save(any(AppUser.class));
+        }
 
-            assertEquals("QA",user.getName());
+        @Test
+        @DisplayName("throws DuplicateResourceException when email already exists")
+        void emailAlreadyExists() {
+            when(userRepository.existsByEmail("test@bank.ma")).thenReturn(true);
+
+            DuplicateResourceException ex = assertThrows(DuplicateResourceException.class,
+                    () -> userService.createUser(createRequest));
+
+            assertEquals("Email already exists", ex.getMessage());
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("throws ResourceNotFoundException when client not found")
+        void clientNotFound() {
+            when(userRepository.existsByEmail("test@bank.ma")).thenReturn(false);
+            when(clientRepository.findById(1L)).thenReturn(Optional.empty());
+
+            assertThrows(ResourceNotFoundException.class,
+                    () -> userService.createUser(createRequest));
+
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("creates user without client when clientId is null")
+        void noClient() {
+            createRequest.setClientId(null);
+
+            when(userRepository.existsByEmail("test@bank.ma")).thenReturn(false);
+            when(passwordEncoder.encode("plain123")).thenReturn("encoded123");
+            when(userRepository.save(any(AppUser.class))).thenReturn(user);
+            when(appUserMapper.toDTO(user)).thenReturn(userDTO);
+
+            AppUserDTO result = userService.createUser(createRequest);
+
+            assertNotNull(result);
+            verify(clientRepository, never()).findById(any());
+        }
+
+        @Test
+        @DisplayName("always adds USER role even when roles list is provided without it")
+        void alwaysAddsUserRole() {
+            createRequest.setRoles(List.of(Role.MANAGER));
+
+            when(userRepository.existsByEmail("test@bank.ma")).thenReturn(false);
+            when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+            when(passwordEncoder.encode(any())).thenReturn("encoded");
+            when(userRepository.save(any(AppUser.class))).thenAnswer(inv -> {
+                AppUser saved = inv.getArgument(0);
+                assertTrue(saved.getRoles().contains(Role.USER),
+                        "USER role must always be present");
+                return user;
+            });
+            when(appUserMapper.toDTO(user)).thenReturn(userDTO);
+
+            userService.createUser(createRequest);
+        }
+    }
+
+    //  updateUser
+
+    @Nested
+    @DisplayName("updateUser")
+    class UpdateUser {
+
+        @Test
+        @DisplayName("updates name, email and jobTitle")
+        void success() {
+            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(userRepository.save(user)).thenReturn(user);
+            when(appUserMapper.toDTO(user)).thenReturn(userDTO);
+
+            AppUserDTO result = userService.updateUser(1L, updateRequest);
+
+            assertNotNull(result);
+            assertEquals("Updated Name", user.getName());
+            assertEquals("updated@bank.ma", user.getEmail());
+            assertEquals("Senior Developer", user.getJobTitle());
 
             verify(userRepository).findById(1L);
             verify(userRepository).save(user);
-            verify(appUserMapper).toDTO(user);
         }
 
+        @Test
+        @DisplayName("throws ResourceNotFoundException when user does not exist")
+        void userNotFound() {
+            when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+            assertThrows(ResourceNotFoundException.class,
+                    () -> userService.updateUser(99L, updateRequest));
+
+            verify(userRepository, never()).save(any());
+        }
     }
 
+    //  getUserById
+
     @Nested
-    @DisplayName("Get user by id test")
-    class GetUserById{
+    @DisplayName("getUserById")
+    class GetUserById {
+
         @Test
-        @DisplayName("Should get user by id")
-        void shouldGetUserByIdSuccessfully(){
+        @DisplayName("returns DTO when user exists")
+        void success() {
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
             when(appUserMapper.toDTO(user)).thenReturn(userDTO);
 
             AppUserDTO result = userService.getUserById(1L);
 
             assertNotNull(result);
-            assertEquals(userDTO.getUserId(), result.getUserId());
-
+            assertEquals(1L, result.getUserId());
             verify(userRepository).findById(1L);
-            verify(appUserMapper).toDTO(user);
         }
 
         @Test
-        @DisplayName("Should throw user not found exception")
-        void shouldThrowUserNotFoundException(){
-            when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        @DisplayName("throws ResourceNotFoundException with correct message")
+        void notFound() {
+            when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-            RuntimeException exception = assertThrows(
-                    RuntimeException.class,
-                    () -> userService.getUserById(1L)
-            );
+            ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
+                    () -> userService.getUserById(99L));
 
-            assertEquals("User not found", exception.getMessage());
-
-            verify(userRepository).findById(1L);
-            verify(appUserMapper, never()).toDTO(any());
+            assertEquals("User not found", ex.getMessage());
         }
     }
 
+    //  loadUserByEmail
+
     @Nested
-    @DisplayName("Query methods test")
-    class QueryMethodes{
+    @DisplayName("loadUserByEmail")
+    class LoadUserByEmail {
+
         @Test
-        @DisplayName("Should get user by client name")
-        void shouldGetUserByClientName(){
-            List<AppUser> users = List.of(user);
-            when(userRepository.findByClient_Name("RMA")).thenReturn(users);
-            when(appUserMapper.toDTO(user)).thenReturn(userDTO);
+        @DisplayName("returns AppUser when email exists")
+        void success() {
+            when(userRepository.findByEmail("test@bank.ma")).thenReturn(Optional.of(user));
 
-            List<AppUserDTO> result = userService.getUserByClientName("RMA");
+            AppUser result = userService.loadUserByEmail("test@bank.ma");
 
-            assertNotNull(result);
-            assertEquals(1, result.size());
-            assertEquals(userDTO.getUserId(), result.get(0).getUserId());
-
-            verify(userRepository).findByClient_Name("RMA");
-            verify(appUserMapper).toDTO(user);
+            assertEquals("test@bank.ma", result.getEmail());
         }
 
         @Test
-        @DisplayName("Should return an empty list when no user found with client name")
-        void shouldReturnEmptyList(){
-            when(userRepository.findByClient_Name("RMA")).thenReturn(List.of());
+        @DisplayName("throws ResourceNotFoundException with email in message")
+        void notFound() {
+            when(userRepository.findByEmail("ghost@bank.ma")).thenReturn(Optional.empty());
 
-            List<AppUserDTO> result = userService.getUserByClientName("RMA");
+            ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
+                    () -> userService.loadUserByEmail("ghost@bank.ma"));
 
-            assertNotNull(result);
-            assertTrue(result.isEmpty());
-
-            verify(userRepository).findByClient_Name("RMA");
-            verify(appUserMapper, never()).toDTO(any());
+            assertTrue(ex.getMessage().contains("ghost@bank.ma"));
         }
+    }
+
+    //  getAllUsers
+
+    @Nested
+    @DisplayName("getAllUsers")
+    class GetAllUsers {
 
         @Test
-        @DisplayName("Should get user by client id")
-        void shouldGetUserByClientId(){
-            List<AppUser> users = List.of(user);
-            when(userRepository.findByClient_ClientId(1L)).thenReturn(users);
-            when(appUserMapper.toDTO(user)).thenReturn(userDTO);
-
-            List<AppUserDTO> result = userService.getUserByClientId(1L);
-
-            assertNotNull(result);
-            assertEquals(1, result.size());
-            assertEquals(userDTO.getUserId(), result.get(0).getUserId());
-
-            verify(userRepository).findByClient_ClientId(1L);
-            verify(appUserMapper).toDTO(user);
-        }
-
-        @Test
-        @DisplayName("Should return an empty list when no user found with client id")
-        void shouldReturnEmptyListWhenNoUserFoundWithClientId(){
-            when(userRepository.findByClient_ClientId(1L)).thenReturn(List.of());
-
-            List<AppUserDTO> result = userService.getUserByClientId(1L);
-
-            assertNotNull(result);
-            assertTrue(result.isEmpty());
-
-            verify(userRepository).findByClient_ClientId(1L);
-            verify(appUserMapper, never()).toDTO(any());
-        }
-
-        @Test
-        @DisplayName("Should get all users")
-        void shouldGetAllUsers(){
-            List<AppUser> users = List.of(user);
-            when(userRepository.findAll()).thenReturn(users);
+        @DisplayName("returns all users as DTOs")
+        void success() {
+            when(userRepository.findAll()).thenReturn(List.of(user));
             when(appUserMapper.toDTO(user)).thenReturn(userDTO);
 
             List<AppUserDTO> result = userService.getAllUsers();
 
-            assertNotNull(result);
             assertEquals(1, result.size());
-
             verify(userRepository).findAll();
-            verify(appUserMapper).toDTO(user);
-        }
-    }
-
-    @Nested
-    @DisplayName("Load by email test")
-    class LoadByEmail{
-        @Test
-        @DisplayName("Should Load User By Email")
-        void shouldLoadUserByEmail(){
-            when(userRepository.findByEmail("test@mail.com")).thenReturn(Optional.of(user));
-
-            AppUser result = userService.loadUserByEmail("test@mail.com");
-
-            assertEquals(user.getEmail(), result.getEmail());
         }
 
         @Test
-        @DisplayName("Should throw user not found exception")
-        void shouldThrowUserNotFoundByEmail(){
-            when(userRepository.findByEmail("test@mail.com")).thenReturn(Optional.empty());
+        @DisplayName("returns empty list when no users exist")
+        void empty() {
+            when(userRepository.findAll()).thenReturn(List.of());
 
-            RuntimeException exception = assertThrows(
-                    RuntimeException.class,
-                    () -> userService.loadUserByEmail("test@mail.com"));
+            List<AppUserDTO> result = userService.getAllUsers();
 
-            assertEquals("User not found with this email: " + user.getEmail(), exception.getMessage());
-            verify(userRepository).findByEmail("test@mail.com");
+            assertTrue(result.isEmpty());
             verify(appUserMapper, never()).toDTO(any());
         }
     }
 
-    @Nested
-    @DisplayName("Pagination methods test")
-    class PaginationMethods{
-        @Test
-        @DisplayName("Should get all users with pagination")
-        void shouldGetAllUsersWithPagination(){
-            Page<AppUser> page = new PageImpl<>(List.of(user));
-            when(userRepository.findAll(pageable)).thenReturn(page);
-            when(appUserMapper.toDTO(user)).thenReturn(userDTO);
-
-            Page<AppUserDTO> result = userService.getAllUsersWithPagination(pageable);
-
-            assertNotNull(result);
-            assertEquals(1,result.getContent().size());
-            assertEquals(userDTO.getUserId(), result.getContent().get(0).getUserId());
-
-            verify(userRepository).findAll(pageable);
-            verify(appUserMapper).toDTO(user);
-        }
-
-        @Test
-        @DisplayName("Should Get users by client id with pagination")
-        void shouldGetUsersByClientIdWithPagination(){
-            Page<AppUser> page = new PageImpl<>(List.of(user));
-            when(userRepository.findByClient_ClientId(1L,pageable)).thenReturn(page);
-            when(appUserMapper.toDTO(user)).thenReturn(userDTO);
-
-            Page<AppUserDTO> result = userService.getUsersByClientIdWithPagination(1L,pageable);
-
-            assertNotNull(result);
-            assertEquals(1,result.getContent().size());
-            assertEquals(userDTO.getUserId(), result.getContent().get(0).getUserId());
-
-            verify(userRepository).findByClient_ClientId(1L,pageable);
-            verify(appUserMapper).toDTO(user);
-        }
-
-        @Test
-        @DisplayName("Should get user by id")
-        void shouldGetUserByIdWithPagination(){
-            Page<AppUser> page = new PageImpl<>(List.of(user));
-            when(userRepository.findByUserId(1L,pageable)).thenReturn(page);
-            when(appUserMapper.toDTO(user)).thenReturn(userDTO);
-
-            Page<AppUserDTO> result = userService.getUserByIdWithPagination(1L,pageable);
-
-            assertNotNull(result);
-            assertEquals(1,result.getContent().size());
-            assertEquals(userDTO.getUserId(), result.getContent().get(0).getUserId());
-
-            verify(userRepository).findByUserId(1L,pageable);
-            verify(appUserMapper).toDTO(user);
-        }
-
-        @Test
-        @DisplayName("Search users with pagination")
-        void searchUsers(){
-            Page<AppUser> page = new PageImpl<>(List.of(user));
-            when(userRepository.searchUsers("test",pageable)).thenReturn(page);
-
-            Page<AppUserDTO> result = userService.searchUsersWithPagination("test",pageable);
-
-            assertNotNull(result);
-            assertEquals(1,result.getContent().size());
-
-            verify(userRepository).searchUsers("test",pageable);
-            verify(appUserMapper).toDTO(user);
-        }
-
-        @Test
-        @DisplayName("Search user by client id")
-        void shouldSearchUsersByClient(){
-            Page<AppUser> page = new PageImpl<>(List.of(user));
-            when(userRepository.searchUsersByClient("test",1L,pageable)).thenReturn(page);
-            when(appUserMapper.toDTO(user)).thenReturn(userDTO);
-
-            Page<AppUserDTO> result = userService.searchUsersByClient("test",1L,pageable);
-
-            assertNotNull(result);
-            assertEquals(1,result.getContent().size());
-
-            verify(userRepository).searchUsersByClient("test",1L,pageable);
-            verify(appUserMapper).toDTO(user);
-        }
-    }
+    //  changePassword
 
     @Nested
-    @DisplayName("Change Password test")
-    class ChangePassword{
+    @DisplayName("changePassword")
+    class ChangePassword {
+
         @Test
-        @DisplayName("Should change user's password successfully")
-        void shouldChangePassword(){
+        @DisplayName("encodes new password and sends notification email")
+        void success() {
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-            when(passwordEncoder.matches("123456",user.getPassword())).thenReturn(true);
-            when(passwordEncoder.matches("200407",user.getPassword())).thenReturn(false);
-            when(passwordEncoder.encode("200407")).thenReturn("encodedPass");
+            when(passwordEncoder.matches("plain123", "plain123")).thenReturn(true);
+            when(passwordEncoder.matches("newPass9", "plain123")).thenReturn(false);
+            when(passwordEncoder.encode("newPass9")).thenReturn("encodedNew");
 
-            userService.changePassword(1L,"123456", "200407");
+            userService.changePassword(1L, "plain123", "newPass9");
 
-            assertEquals("encodedPass",user.getPassword());
-
+            assertEquals("encodedNew", user.getPassword());
             verify(userRepository).save(user);
             verify(emailService).sendPasswordChangedEmail(user);
         }
 
         @Test
-        @DisplayName("should throw user not found exception when user not found")
-        void shouldThrowExceptionWhenUserNotFound() {
+        @DisplayName("throws ResourceNotFoundException when user not found")
+        void userNotFound() {
+            when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-            when(userRepository.findById(1L)).thenReturn(Optional.empty());
-
-            RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-                userService.changePassword(1L, "123456", "200407");
-            });
-
-            assertEquals("User not found", ex.getMessage());
+            assertThrows(ResourceNotFoundException.class,
+                    () -> userService.changePassword(99L, "any", "newPass9"));
 
             verify(userRepository, never()).save(any());
         }
 
         @Test
-        @DisplayName("Should throw exception when current password incorrect")
-        void shouldThrowExceptionWhenCurrentPasswordIncorrect() {
-
+        @DisplayName("throws InvalidPasswordException when current password is wrong")
+        void wrongCurrentPassword() {
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-            when(passwordEncoder.matches("wrongPass", user.getPassword())).thenReturn(false);
+            when(passwordEncoder.matches("wrongPass", "plain123")).thenReturn(false);
 
-            RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-                userService.changePassword(1L, "wrongPass", "newPass");
-            });
+            InvalidPasswordException ex = assertThrows(InvalidPasswordException.class,
+                    () -> userService.changePassword(1L, "wrongPass", "newPass9"));
 
             assertEquals("Current password is incorrect", ex.getMessage());
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("throws InvalidPasswordException when new password equals current")
+        void samePassword() {
+            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("plain123", "plain123")).thenReturn(true);
+
+            InvalidPasswordException ex = assertThrows(InvalidPasswordException.class,
+                    () -> userService.changePassword(1L, "plain123", "plain123"));
+
+            assertEquals("New password must be different from current password", ex.getMessage());
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("throws InvalidPasswordException when new password is too short")
+        void passwordTooShort() {
+            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("plain123", "plain123")).thenReturn(true);
+            when(passwordEncoder.matches("abc", "plain123")).thenReturn(false);
+
+            InvalidPasswordException ex = assertThrows(InvalidPasswordException.class,
+                    () -> userService.changePassword(1L, "plain123", "abc"));
+
+            assertEquals("New password must be at least 6 characters", ex.getMessage());
+            verify(userRepository, never()).save(any());
+        }
+    }
+
+    //  addRoleToUser
+
+    @Nested
+    @DisplayName("addRoleToUser")
+    class AddRoleToUser {
+
+        @Test
+        @DisplayName("adds role when user exists and role is valid")
+        void success() {
+            when(userRepository.findByName("Tester")).thenReturn(user);
+
+            userService.addRoleToUser("Tester", "MANAGER");
+
+            assertTrue(user.getRoles().contains(Role.MANAGER));
+            verify(userRepository).save(user);
+        }
+
+        @Test
+        @DisplayName("does not save when user already has the role")
+        void alreadyHasRole() {
+            user.setRoles(new java.util.ArrayList<>(List.of(Role.MANAGER)));
+            when(userRepository.findByName("Tester")).thenReturn(user);
+
+            userService.addRoleToUser("Tester", "MANAGER");
 
             verify(userRepository, never()).save(any());
         }
 
         @Test
-        @DisplayName("Should throw exception when new password is same as old password")
-        void shouldThrowExceptionWhenNewPasswordSameAsOld() {
+        @DisplayName("throws ResourceNotFoundException when user not found")
+        void userNotFound() {
+            when(userRepository.findByName("Ghost")).thenReturn(null);
 
-            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-            when(passwordEncoder.matches("123456", user.getPassword())).thenReturn(true);
-            when(passwordEncoder.matches("123456", user.getPassword())).thenReturn(true);
-
-            RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-                userService.changePassword(1L, "123456", "123456");
-            });
-
-            assertEquals("New password must be different from current password", ex.getMessage());
+            assertThrows(ResourceNotFoundException.class,
+                    () -> userService.addRoleToUser("Ghost", "MANAGER"));
         }
 
         @Test
-        @DisplayName("Should throw exception when the new password is less than 6 characters")
-        void shouldThrowExceptionWhenPasswordTooShort() {
+        @DisplayName("throws BusinessException when role name is invalid")
+        void invalidRole() {
+            when(userRepository.findByName("Tester")).thenReturn(user);
 
-            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-            when(passwordEncoder.matches("oldPass", user.getPassword())).thenReturn(true);
-            when(passwordEncoder.matches("123", user.getPassword())).thenReturn(false);
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> userService.addRoleToUser("Tester", "SUPERUSER"));
 
-            RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-                userService.changePassword(1L, "oldPass", "123");
-            });
-
-            assertEquals("New password must be at least 6 characters", ex.getMessage());
+            assertTrue(ex.getMessage().contains("SUPERUSER"));
         }
     }
 }

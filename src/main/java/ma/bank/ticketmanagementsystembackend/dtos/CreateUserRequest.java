@@ -1,5 +1,6 @@
 package ma.bank.ticketmanagementsystembackend.dtos;
 
+import lombok.Builder;
 import lombok.Data;
 import ma.bank.ticketmanagementsystembackend.entities.Role;
 

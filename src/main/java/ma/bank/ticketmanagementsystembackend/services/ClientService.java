@@ -7,8 +7,10 @@ import java.util.List;
 
 public interface ClientService  {
     public ClientDTO createClient(Client client);
-    public ClientDTO updateClient(Client client);
+    public ClientDTO updateClient(Long id, Client client);
     public ClientDTO getClientById(Long id);
     public List<ClientDTO> getAllClients();
     public List<ClientDTO> getClientsByStatus(ClientStatus status);
+    public ClientDTO suspendClient(Long id, String reason, String adminEmail);
+    public ClientDTO reactivateClient(Long id);
 }

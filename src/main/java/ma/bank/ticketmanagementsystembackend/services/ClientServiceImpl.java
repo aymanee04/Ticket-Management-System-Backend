@@ -1,22 +1,28 @@
 package ma.bank.ticketmanagementsystembackend.services;
 
-import lombok.AllArgsConstructor;
+import ma.bank.ticketmanagementsystembackend.exceptions.BusinessException;
+import ma.bank.ticketmanagementsystembackend.exceptions.ResourceNotFoundException;
+import lombok.RequiredArgsConstructor;
 import ma.bank.ticketmanagementsystembackend.dtos.dto.ClientDTO;
+import ma.bank.ticketmanagementsystembackend.entities.AppUser;
 import ma.bank.ticketmanagementsystembackend.entities.Client;
 import ma.bank.ticketmanagementsystembackend.entities.ClientStatus;
+
 import ma.bank.ticketmanagementsystembackend.mappers.ClientMapper;
 import ma.bank.ticketmanagementsystembackend.repositories.ClientRepository;
+import ma.bank.ticketmanagementsystembackend.repositories.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class ClientServiceImpl implements ClientService {
+
     private final ClientRepository clientRepository;
+    private final UserRepository userRepository;
     private final ClientMapper clientMapper;
 
     @Override
@@ -24,36 +30,81 @@ public class ClientServiceImpl implements ClientService {
     public ClientDTO createClient(Client client) {
         client.setStatus(ClientStatus.ACTIVE);
         client.setCreatedAt(LocalDateTime.now());
-        Client savedClient = clientRepository.save(client);
-        return clientMapper.toDTO(savedClient);
+        return clientMapper.toDTO(clientRepository.save(client));
     }
 
     @Override
-    public ClientDTO updateClient(Client client) {
-//        client.setStatus(ClientStatus.ACTIVE);
-        client.setCreatedAt(LocalDateTime.now());
-        Client savedClient = clientRepository.save(client);
-        return clientMapper.toDTO(savedClient);
+    @Transactional
+    public ClientDTO updateClient(Long id, Client client) {
+        findClientById(id);
+        client.setClientId(id);
+        return clientMapper.toDTO(clientRepository.save(client));
     }
 
     @Override
     public ClientDTO getClientById(Long id) {
-        Client client = clientRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Client with id " + id + " not found"));
-        return clientMapper.toDTO(client);
+        return clientMapper.toDTO(findClientById(id));
     }
 
     @Override
     public List<ClientDTO> getAllClients() {
-        return clientRepository.findAll().stream()
+        return clientRepository.findAll()
+                .stream()
                 .map(clientMapper::toDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public List<ClientDTO> getClientsByStatus(ClientStatus status) {
-        return clientRepository.findByStatus(status).stream()
+        return clientRepository.findByStatus(status)
+                .stream()
                 .map(clientMapper::toDTO)
-                .collect(Collectors.toList());
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public ClientDTO suspendClient(Long id, String reason, String adminEmail) {
+        Client client = findClientById(id);
+
+        if (client.getStatus() == ClientStatus.SUSPENDED) {
+            throw new BusinessException("Client is already suspended");
+        }
+
+        AppUser admin = userRepository.findByEmail(adminEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Admin user not found: " + adminEmail));
+
+        client.setStatus(ClientStatus.SUSPENDED);
+        client.setSuspensionReason(reason);
+        client.setSuspendedAt(LocalDateTime.now());
+        client.setSuspendedBy(admin.getUserId());
+
+        return clientMapper.toDTO(clientRepository.save(client));
+    }
+
+    @Override
+    @Transactional
+    public ClientDTO reactivateClient(Long id) {
+        Client client = findClientById(id);
+
+        if (client.getStatus() == ClientStatus.ACTIVE) {
+            throw new BusinessException("Client is already active");
+        }
+        if (client.getStatus() != ClientStatus.SUSPENDED && client.getStatus() != ClientStatus.INACTIVE) {
+            throw new BusinessException("Client can only be reactivated from SUSPENDED or INACTIVE status");
+        }
+
+        client.setStatus(ClientStatus.ACTIVE);
+        client.setSuspensionReason(null);
+        client.setSuspendedAt(null);
+        client.setSuspendedBy(null);
+
+        return clientMapper.toDTO(clientRepository.save(client));
+    }
+
+
+    private Client findClientById(Long id) {
+        return clientRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Client not found with id: " + id));
     }
 }

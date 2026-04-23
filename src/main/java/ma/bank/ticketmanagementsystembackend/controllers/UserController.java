@@ -1,75 +1,59 @@
 package ma.bank.ticketmanagementsystembackend.controllers;
 
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import ma.bank.ticketmanagementsystembackend.dtos.ChangePasswordRequest;
 import ma.bank.ticketmanagementsystembackend.dtos.CreateUserRequest;
 import ma.bank.ticketmanagementsystembackend.dtos.PagedResponse;
 import ma.bank.ticketmanagementsystembackend.dtos.UpdateUserRequest;
 import ma.bank.ticketmanagementsystembackend.dtos.dto.AppUserDTO;
-import ma.bank.ticketmanagementsystembackend.entities.AppUser;
-import ma.bank.ticketmanagementsystembackend.entities.Client;
 import ma.bank.ticketmanagementsystembackend.entities.Role;
-import ma.bank.ticketmanagementsystembackend.repositories.UserRepository;
-import ma.bank.ticketmanagementsystembackend.services.EmailService;
+import ma.bank.ticketmanagementsystembackend.exceptions.BusinessException;
+import ma.bank.ticketmanagementsystembackend.exceptions.InvalidPasswordException;
 import ma.bank.ticketmanagementsystembackend.services.UserService;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin("*")
+@RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
-    private final UserRepository userRepository;
-    private final EmailService emailService;
-
-    public UserController(UserService userService, UserRepository userRepository, EmailService emailService) {
-        this.userService = userService;
-        this.userRepository = userRepository;
-        this.emailService = emailService;
-    }
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
-    public ResponseEntity<AppUserDTO> createUser(@RequestBody CreateUserRequest request) {
-        AppUser newUser = AppUser.builder()
-                .name(request.getName())
-                .email(request.getEmail())
-                .jobTitle(request.getJobTitle())
-                .password(request.getPassword())
-                .roles(request.getRoles() != null ? new ArrayList<>(request.getRoles()) : new ArrayList<>(List.of(Role.USER)))
-                .client(request.getClientId() != null ? Client.builder().clientId(request.getClientId()).build() : null)
-                .build();
-
-        AppUserDTO createdUser = userService.createUserInternal(newUser);
-        return ResponseEntity.ok(createdUser);
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<AppUserDTO> createUser(@RequestBody @Valid CreateUserRequest request) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(userService.createUser(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('USER')")
+    @PreAuthorize("hasAuthority('USER')")
     public ResponseEntity<AppUserDTO> updateUser(
             @PathVariable Long id,
-            @RequestBody UpdateUserRequest request) {
+            @RequestBody @Valid UpdateUserRequest request) {
         return ResponseEntity.ok(userService.updateUser(id, request));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('USER')")
+    @PreAuthorize("hasAuthority('USER')")
     public ResponseEntity<AppUserDTO> getUser(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
     @GetMapping("/client/{id}")
-    @PreAuthorize("hasAnyAuthority('USER')")
+    @PreAuthorize("hasAuthority('USER')")
     public ResponseEntity<List<AppUserDTO>> getUserByClientId(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserByClientId(id));
     }
@@ -80,150 +64,84 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('USER')")
+    @PreAuthorize("hasAuthority('USER')")
     public ResponseEntity<List<AppUserDTO>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
     @GetMapping(params = "page")
-    @PreAuthorize("hasAnyAuthority('USER')")
-    public ResponseEntity<PagedResponse<AppUserDTO>> getAllUsers(
+    @PreAuthorize("hasAuthority('USER')")
+    public ResponseEntity<PagedResponse<AppUserDTO>> getAllUsersPaged(
+            Authentication auth,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "name") String sortBy,
-            @RequestParam(defaultValue = "asc") String direction
-    ) {
-        Sort.Direction sortDirection = direction.equalsIgnoreCase("asc")
-                ? Sort.Direction.ASC
-                : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AppUser currentUser = userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+            @RequestParam(defaultValue = "asc") String direction) {
 
-        Page<AppUserDTO> userPage;
-
-        if (currentUser.getRoles().contains(Role.ADMIN)) {
-            userPage = userService.getAllUsersWithPagination(pageable);
-        } else if (currentUser.getRoles().contains(Role.MANAGER)) {
-            if (currentUser.getClient() != null) {
-                userPage = userService.getUsersByClientIdWithPagination(
-                        currentUser.getClient().getClientId(),
-                        pageable
-                );
-            } else {
-                userPage = Page.empty();
-            }
-        } else {
-            userPage = userService.getUserByIdWithPagination(currentUser.getUserId(), pageable);
-        }
-
-        PagedResponse<AppUserDTO> response = new PagedResponse<>(
-                userPage.getContent(),
-                userPage.getNumber(),
-                userPage.getSize(),
-                userPage.getTotalElements(),
-                userPage.getTotalPages(),
-                userPage.isLast(),
-                userPage.isFirst()
-        );
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                userService.getUsersPagedForCurrentUser(auth.getName(), page, size, sortBy, direction));
     }
 
     @GetMapping(value = "/client/{id}", params = "page")
-    @PreAuthorize("hasAnyAuthority('USER')")
-    public ResponseEntity<PagedResponse<AppUserDTO>> getUserByClientId(
+    @PreAuthorize("hasAuthority('USER')")
+    public ResponseEntity<PagedResponse<AppUserDTO>> getUsersByClientIdPaged(
             @PathVariable Long id,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "name") String sortBy,
-            @RequestParam(defaultValue = "asc") String direction
-    ) {
+            @RequestParam(defaultValue = "asc") String direction) {
+
         Sort.Direction sortDirection = direction.equalsIgnoreCase("asc")
-                ? Sort.Direction.ASC
-                : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
-        Page<AppUserDTO> userDTOPage = userService.getUsersByClientIdWithPagination(id,pageable);
-        PagedResponse<AppUserDTO> response = new PagedResponse<>(
-                userDTOPage.getContent(),
-                userDTOPage.getNumber(),
-                userDTOPage.getSize(),
-                userDTOPage.getTotalElements(),
-                userDTOPage.getTotalPages(),
-                userDTOPage.isLast(),
-                userDTOPage.isFirst()
-        );
-        return ResponseEntity.ok(response);
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
+        org.springframework.data.domain.Pageable pageable =
+                org.springframework.data.domain.PageRequest.of(
+                        page, size, org.springframework.data.domain.Sort.by(sortDirection, sortBy));
+
+        return ResponseEntity.ok(
+                toPagedResponse(userService.getUsersByClientIdWithPagination(id, pageable)));
     }
 
     @GetMapping(value = "/search", params = "page")
-    @PreAuthorize("hasAnyAuthority('USER')")
-    public ResponseEntity<PagedResponse<AppUserDTO>> searchUsers(
+    @PreAuthorize("hasAuthority('USER')")
+    public ResponseEntity<PagedResponse<AppUserDTO>> searchUsersPaged(
+            Authentication auth,
             @RequestParam String searchTerm,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        Pageable pageable = PageRequest.of(page, size);
+            @RequestParam(defaultValue = "10") int size) {
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AppUser currentUser = userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Page<AppUserDTO> userDTOPage;
-
-        if (currentUser.getRoles().contains(Role.ADMIN)) {
-            userDTOPage = userService.searchUsersWithPagination(searchTerm, pageable);
-        } else if (currentUser.getRoles().contains(Role.MANAGER)) {
-            if (currentUser.getClient() != null) {
-                userDTOPage = userService.searchUsersByClient(
-                        searchTerm,
-                        currentUser.getClient().getClientId(),
-                        pageable
-                );
-            } else {
-                userDTOPage = Page.empty();
-            }
-        } else {
-            userDTOPage = Page.empty();
-        }
-
-        PagedResponse<AppUserDTO> response = new PagedResponse<>(
-                userDTOPage.getContent(),
-                userDTOPage.getNumber(),
-                userDTOPage.getSize(),
-                userDTOPage.getTotalElements(),
-                userDTOPage.getTotalPages(),
-                userDTOPage.isLast(),
-                userDTOPage.isFirst()
-        );
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                userService.searchUsersPagedForCurrentUser(auth.getName(), searchTerm, page, size));
     }
-
 
     @PutMapping("/{id}/change-password")
     @PreAuthorize("hasAuthority('USER')")
     public ResponseEntity<Map<String, String>> changePassword(
+            Authentication auth,
             @PathVariable Long id,
-            @RequestBody ChangePasswordRequest request) {
+            @RequestBody @Valid ChangePasswordRequest request) {
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AppUser currentUser = userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        AppUserDTO currentUser = userService.getUserByEmail(auth.getName());
 
         if (!currentUser.getUserId().equals(id)) {
-            throw new RuntimeException("You can only change your own password");
+            throw new BusinessException("You can only change your own password");
         }
 
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new RuntimeException("New passwords do not match");
+            throw new InvalidPasswordException("New passwords do not match");
         }
 
         userService.changePassword(id, request.getCurrentPassword(), request.getNewPassword());
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Password changed successfully");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+    }
+
+    // Private helper
+
+    private <T> PagedResponse<T> toPagedResponse(org.springframework.data.domain.Page<T> p) {
+        return new PagedResponse<>(
+                p.getContent(), p.getNumber(), p.getSize(),
+                p.getTotalElements(), p.getTotalPages(),
+                p.isLast(), p.isFirst()
+        );
     }
 }
-

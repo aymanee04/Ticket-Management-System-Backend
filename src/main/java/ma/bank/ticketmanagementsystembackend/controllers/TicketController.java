@@ -1,106 +1,110 @@
 package ma.bank.ticketmanagementsystembackend.controllers;
 
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import ma.bank.ticketmanagementsystembackend.dtos.*;
 import ma.bank.ticketmanagementsystembackend.dtos.dto.TicketDTO;
 import ma.bank.ticketmanagementsystembackend.entities.AppUser;
-import ma.bank.ticketmanagementsystembackend.entities.Role;
 import ma.bank.ticketmanagementsystembackend.entities.TicketStatus;
-import ma.bank.ticketmanagementsystembackend.repositories.UserRepository;
+import ma.bank.ticketmanagementsystembackend.exceptions.BusinessException;
 import ma.bank.ticketmanagementsystembackend.services.TicketService;
+import ma.bank.ticketmanagementsystembackend.services.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tickets")
 @CrossOrigin("*")
+@RequiredArgsConstructor
 public class TicketController {
-    private final TicketService ticketService;
-    private final UserRepository userRepository;
 
-    public TicketController(TicketService ticketService, UserRepository userRepository) {
-        this.ticketService = ticketService;
-        this.userRepository = userRepository;
-    }
+    private final TicketService ticketService;
+    private final UserService userService;
+
+    //  Create
 
     @PostMapping
     @PreAuthorize("hasAuthority('USER')")
-    public ResponseEntity<TicketDTO> createTicket(@RequestBody CreateTicketRequest request) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AppUser currentUser = userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public ResponseEntity<TicketDTO> createTicket(
+            Authentication auth,
+            @RequestBody @Valid CreateTicketRequest request) {
+
+        AppUser currentUser = userService.loadUserByEmail(auth.getName());
 
         if (currentUser.getClient() == null) {
-            throw new RuntimeException("User must belong to a client to create tickets");
+            throw new BusinessException("User must belong to a client to create tickets");
         }
 
-        TicketDTO ticket = ticketService.createTicket(
-                request.getTitle(),
-                request.getDescription(),
-                currentUser.getUserId(),
-                currentUser.getClient().getClientId()
-        );
-
-        return ResponseEntity.ok(ticket);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ticketService.createTicket(
+                        request.getTitle(),
+                        request.getDescription(),
+                        currentUser.getUserId(),
+                        currentUser.getClient().getClientId()
+                ));
     }
 
     @PostMapping("/incident")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<TicketDTO> createIncident(@RequestBody CreateIncidentRequest request) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AppUser currentUser = userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public ResponseEntity<TicketDTO> createIncident(
+            Authentication auth,
+            @RequestBody @Valid CreateIncidentRequest request) {
 
-        if (request.getClientIds() == null || request.getClientIds().isEmpty()) {
-            throw new RuntimeException("At least one client must be selected");
-        }
+        AppUser currentUser = userService.loadUserByEmail(auth.getName());
 
-        TicketDTO ticket = ticketService.createMultiClientTicket(
-                request.getTitle(),
-                request.getDescription(),
-                currentUser.getUserId(),
-                request.getClientIds()
-        );
-
-        return ResponseEntity.ok(ticket);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ticketService.createMultiClientTicket(
+                        request.getTitle(),
+                        request.getDescription(),
+                        currentUser.getUserId(),
+                        request.getClientIds()
+                ));
     }
+
+    //  Ticket Lifecycle
 
     @PutMapping("/{id}/assign")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
     public ResponseEntity<TicketDTO> assignTicket(
             @PathVariable Long id,
-            @RequestBody AssignTicketRequest request) {
+            @RequestBody @Valid AssignTicketRequest request) {
         return ResponseEntity.ok(ticketService.assignTicket(id, request.getAssignedToId()));
     }
 
+    // managerId is now resolved from the JWT — not trusted from the request param
     @PutMapping("/{id}/approve")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
     public ResponseEntity<TicketDTO> approveTicket(
+            Authentication auth,
             @PathVariable Long id,
-            @RequestParam Long managerId,
-            @RequestBody Map<String, String> request) {
+            @RequestBody @Valid TicketActionRequest request) {
 
-        String comment = request.get("comment");
-        return ResponseEntity.ok(ticketService.approveTicket(id, managerId, comment));
+        AppUser manager = userService.loadUserByEmail(auth.getName());
+        return ResponseEntity.ok(
+                ticketService.approveTicket(id, manager.getUserId(), request.getComment()));
     }
 
     @PutMapping("/{id}/reject")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
     public ResponseEntity<TicketDTO> rejectTicket(
+            Authentication auth,
             @PathVariable Long id,
-            @RequestParam Long managerId,
-            @RequestBody Map<String, String> request) {
-        String comment = request.get("comment");
-        return ResponseEntity.ok(ticketService.rejectTicket(id, managerId, comment));
+            @RequestBody @Valid TicketActionRequest request) {
+
+        AppUser manager = userService.loadUserByEmail(auth.getName());
+        return ResponseEntity.ok(
+                ticketService.rejectTicket(id, manager.getUserId(), request.getComment()));
     }
 
     @PutMapping("/{id}/archive")
@@ -115,32 +119,43 @@ public class TicketController {
         return ResponseEntity.ok(ticketService.cancelTicket(id));
     }
 
+    //  Delete
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Void> hardDeleteTicket(@PathVariable Long id) {
+        ticketService.hardDeleteTicket(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    //  Read
+
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('USER')")
+    @PreAuthorize("hasAuthority('USER')")
     public ResponseEntity<TicketDTO> getTicket(@PathVariable Long id) {
         return ResponseEntity.ok(ticketService.getTicketById(id));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('USER')")
+    @PreAuthorize("hasAuthority('USER')")
     public ResponseEntity<List<TicketDTO>> getAllTickets() {
         return ResponseEntity.ok(ticketService.getAllTickets());
     }
 
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasAnyAuthority('USER')")
+    @PreAuthorize("hasAuthority('USER')")
     public ResponseEntity<List<TicketDTO>> getTicketsByStatus(@PathVariable TicketStatus status) {
         return ResponseEntity.ok(ticketService.getTicketsByStatus(status));
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasAnyAuthority('USER')")
+    @PreAuthorize("hasAuthority('USER')")
     public ResponseEntity<List<TicketDTO>> getTicketsByUserId(@PathVariable Long userId) {
         return ResponseEntity.ok(ticketService.getTicketsByUserId(userId));
     }
 
     @GetMapping("/client/{clientId}")
-    @PreAuthorize("hasAnyAuthority('USER')")
+    @PreAuthorize("hasAuthority('USER')")
     public ResponseEntity<List<TicketDTO>> getTicketsByClient(@PathVariable Long clientId) {
         return ResponseEntity.ok(ticketService.getTicketsByClient(clientId));
     }
@@ -152,140 +167,71 @@ public class TicketController {
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasAnyAuthority('USER')")
+    @PreAuthorize("hasAuthority('USER')")
     public ResponseEntity<List<TicketDTO>> searchTickets(@RequestParam String q) {
         return ResponseEntity.ok(ticketService.searchTickets(q));
     }
 
+    //  Paginated
 
     @GetMapping(params = "page")
-    @PreAuthorize("hasAnyAuthority('USER')")
-    public ResponseEntity<PagedResponse<TicketDTO>> getAllTickets(
+    @PreAuthorize("hasAuthority('USER')")
+    public ResponseEntity<PagedResponse<TicketDTO>> getAllTicketsPaged(
+            Authentication auth,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String direction
-    ) {
-        Sort.Direction sortDirection = direction.equalsIgnoreCase("asc")
-                ? Sort.Direction.ASC
-                : Sort.Direction.DESC;
+            @RequestParam(defaultValue = "desc") String direction) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
-        //########"//
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AppUser currentUser = userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Page<TicketDTO> ticketPage;
-
-        if (currentUser.getRoles().contains(Role.ADMIN) ||
-                currentUser.getRoles().contains(Role.MANAGER)) {
-            ticketPage = ticketService.getAllTicketsWithPagination(pageable);
-        } else {
-            if (currentUser.getClient() != null) {
-                ticketPage = ticketService.getTicketsByClientId(
-                        currentUser.getClient().getClientId(),
-                        pageable
-                );
-            } else {
-                ticketPage = Page.empty();
-            }
-        }
-
-        PagedResponse<TicketDTO> response = new PagedResponse<>(
-                ticketPage.getContent(),
-                ticketPage.getNumber(),
-                ticketPage.getSize(),
-                ticketPage.getTotalElements(),
-                ticketPage.getTotalPages(),
-                ticketPage.isLast(),
-                ticketPage.isFirst()
-        );
-
-        return ResponseEntity.ok(response);
+        Pageable pageable = buildPageable(page, size, sortBy, direction);
+        AppUser currentUser = userService.loadUserByEmail(auth.getName());
+        return ResponseEntity.ok(
+                toPagedResponse(ticketService.getTicketsPagedForUser(currentUser, pageable)));
     }
 
     @GetMapping(value = "/status/{status}", params = "page")
-    @PreAuthorize("hasAnyAuthority('USER')")
-    public ResponseEntity<PagedResponse<TicketDTO>> getTicketsByStatus(
+    @PreAuthorize("hasAuthority('USER')")
+    public ResponseEntity<PagedResponse<TicketDTO>> getTicketsByStatusPaged(
+            Authentication auth,
             @PathVariable TicketStatus status,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AppUser currentUser = userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+            @RequestParam(defaultValue = "10") int size) {
 
-        Page<TicketDTO> ticketPage;
-
-        if (currentUser.getRoles().contains(Role.ADMIN) ||
-                currentUser.getRoles().contains(Role.MANAGER)) {
-            ticketPage = ticketService.getTicketsByStatusWithPagination(status, pageable);
-        } else {
-            if (currentUser.getClient() != null) {
-                ticketPage = ticketService.getTicketsByStatusAndClient(
-                        status,
-                        currentUser.getClient().getClientId(),
-                        pageable
-                );
-            } else {
-                ticketPage = Page.empty();
-            }
-        }
-
-        PagedResponse<TicketDTO> response = new PagedResponse<>(
-                ticketPage.getContent(),
-                ticketPage.getNumber(),
-                ticketPage.getSize(),
-                ticketPage.getTotalElements(),
-                ticketPage.getTotalPages(),
-                ticketPage.isLast(),
-                ticketPage.isFirst()
-        );
-
-        return ResponseEntity.ok(response);
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(Sort.Direction.DESC, "createdAt"));
+        AppUser currentUser = userService.loadUserByEmail(auth.getName());
+        return ResponseEntity.ok(
+                toPagedResponse(ticketService.getTicketsByStatusPagedForUser(status, currentUser, pageable)));
     }
 
     @GetMapping(value = "/search", params = "page")
-    @PreAuthorize("hasAnyAuthority('USER')")
-    public ResponseEntity<PagedResponse<TicketDTO>> searchTickets(
+    @PreAuthorize("hasAuthority('USER')")
+    public ResponseEntity<PagedResponse<TicketDTO>> searchTicketsPaged(
+            Authentication auth,
             @RequestParam String q,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        AppUser currentUser = userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+            @RequestParam(defaultValue = "10") int size) {
 
-        Page<TicketDTO> ticketPage;
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(Sort.Direction.DESC, "createdAt"));
+        AppUser currentUser = userService.loadUserByEmail(auth.getName());
+        return ResponseEntity.ok(
+                toPagedResponse(ticketService.searchTicketsPagedForUser(q, currentUser, pageable)));
+    }
 
-        if (currentUser.getRoles().contains(Role.ADMIN) ||
-                currentUser.getRoles().contains(Role.MANAGER)) {
-            ticketPage = ticketService.searchTicketsWithPagination(q, pageable);
-        } else {
-            if (currentUser.getClient() != null) {
-                ticketPage = ticketService.searchTicketsByClient(
-                        q,
-                        currentUser.getClient().getClientId(),
-                        pageable
-                );
-            } else {
-                ticketPage = Page.empty();
-            }
-        }
+    //  Private helpers
 
-        PagedResponse<TicketDTO> response = new PagedResponse<>(
-                ticketPage.getContent(),
-                ticketPage.getNumber(),
-                ticketPage.getSize(),
-                ticketPage.getTotalElements(),
-                ticketPage.getTotalPages(),
-                ticketPage.isLast(),
-                ticketPage.isFirst()
+    private Pageable buildPageable(int page, int size, String sortBy, String direction) {
+        Sort.Direction dir = direction.equalsIgnoreCase("asc")
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return PageRequest.of(page, size, Sort.by(dir, sortBy));
+    }
+
+    private <T> PagedResponse<T> toPagedResponse(Page<T> p) {
+        return new PagedResponse<>(
+                p.getContent(), p.getNumber(), p.getSize(),
+                p.getTotalElements(), p.getTotalPages(),
+                p.isLast(), p.isFirst()
         );
-
-        return ResponseEntity.ok(response);
     }
 }
