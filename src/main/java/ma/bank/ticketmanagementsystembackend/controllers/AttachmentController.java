@@ -1,7 +1,10 @@
 package ma.bank.ticketmanagementsystembackend.controllers;
 
 import ma.bank.ticketmanagementsystembackend.dtos.dto.AttachmentDTO;
+import ma.bank.ticketmanagementsystembackend.entities.AppUser;
 import ma.bank.ticketmanagementsystembackend.services.AttachmentService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -23,6 +26,7 @@ import java.util.List;
 @RequestMapping("/api/attachments")
 public class AttachmentController {
 
+    private static final Logger logger = LoggerFactory.getLogger(AttachmentController.class);
     private final AttachmentService attachmentService;
 
     public AttachmentController(AttachmentService attachmentService) {
@@ -49,8 +53,9 @@ public class AttachmentController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAttachment(@PathVariable Long id) throws IOException {
-        attachmentService.deleteAttachment(id);
+    @PreAuthorize("hasAnyAuthority('USER')")
+    public ResponseEntity<Void> deleteAttachment(@PathVariable Long id, AppUser user) throws IOException {
+        attachmentService.deleteAttachment(id, user);
         return ResponseEntity.noContent().build();
     }
 
@@ -86,7 +91,7 @@ public class AttachmentController {
                     .body(resource);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error downloading attachment with id {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

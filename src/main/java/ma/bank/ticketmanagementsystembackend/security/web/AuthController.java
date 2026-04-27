@@ -7,14 +7,10 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
-import ma.bank.ticketmanagementsystembackend.dtos.dto.AppUserDTO;
+import lombok.RequiredArgsConstructor;
 import ma.bank.ticketmanagementsystembackend.entities.AppUser;
-import ma.bank.ticketmanagementsystembackend.entities.Role;
 import ma.bank.ticketmanagementsystembackend.security.JwtUtils;
 import ma.bank.ticketmanagementsystembackend.services.UserService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -23,13 +19,10 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/auth")
-@AllArgsConstructor
-@CrossOrigin("*")
+@RequiredArgsConstructor
 public class AuthController {
 
     private final UserService userService;
-    private final PasswordEncoder passwordEncoder;
-
 
     @GetMapping("/refreshToken")
     public void refreshToken(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -49,9 +42,13 @@ public class AuthController {
                         .withSubject(appUser.getEmail())
                         .withExpiresAt(new Date(System.currentTimeMillis() + JwtUtils.EXPIRE_ACCESS_TOKEN))
                         .withIssuer(request.getRequestURL().toString())
+                        .withClaim("userId", appUser.getUserId())
+                        .withClaim("name", appUser.getName() != null ? appUser.getName() : "")
+                        .withClaim("email", appUser.getEmail())
                         .withClaim("roles", appUser.getRoles().stream()
                                 .map(Enum::name)
                                 .collect(Collectors.toList()))
+                        .withClaim("clientName", appUser.getClient() != null ? appUser.getClient().getName() : "")
                         .sign(algorithm);
 
                 Map<String, String> tokens = new HashMap<>();

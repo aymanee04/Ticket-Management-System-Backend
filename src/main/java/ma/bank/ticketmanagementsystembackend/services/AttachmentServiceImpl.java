@@ -5,19 +5,22 @@ import lombok.RequiredArgsConstructor;
 import ma.bank.ticketmanagementsystembackend.cloudinary.CloudinaryService;
 import ma.bank.ticketmanagementsystembackend.dtos.DownloadedFile;
 import ma.bank.ticketmanagementsystembackend.dtos.dto.AttachmentDTO;
+import ma.bank.ticketmanagementsystembackend.entities.AppUser;
 import ma.bank.ticketmanagementsystembackend.entities.Attachment;
+import ma.bank.ticketmanagementsystembackend.entities.Role;
 import ma.bank.ticketmanagementsystembackend.entities.Ticket;
+import ma.bank.ticketmanagementsystembackend.exceptions.BusinessException;
+import ma.bank.ticketmanagementsystembackend.exceptions.ResourceNotFoundException;
 import ma.bank.ticketmanagementsystembackend.mappers.AttachmentMapper;
 import ma.bank.ticketmanagementsystembackend.repositories.AttachmentRepository;
 import ma.bank.ticketmanagementsystembackend.repositories.TicketRepository;
+import ma.bank.ticketmanagementsystembackend.repositories.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -32,8 +35,10 @@ public class AttachmentServiceImpl implements AttachmentService {
     private final CloudinaryService cloudinaryService;
     private final Cloudinary cloudinary;
     private final AttachmentMapper attachmentMapper;
+    private final UserRepository userRepository;
 
     @Override
+    @Transactional
     public AttachmentDTO uploadAttachment(Long ticketId , MultipartFile file) throws IOException {
         Ticket ticket = ticketRepository.findById(ticketId).orElseThrow(() -> new RuntimeException("ticket not found"));
         Map<String, String> uploadResult =
@@ -59,9 +64,23 @@ public class AttachmentServiceImpl implements AttachmentService {
     }
 
     @Override
-    public void deleteAttachment(Long attachmentId) throws IOException {
+    @Transactional
+    public void deleteAttachment(Long attachmentId, AppUser user) throws IOException {
+
         Attachment attachment = attachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new RuntimeException("Attachment not found"));
+
+        AppUser currentUser = userRepository.findByEmail(user.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Ticket ticket = attachment.getTicket();
+
+        boolean isOwner = currentUser.equals(ticket.getCreatedBy()) ||
+                          currentUser.getRoles().contains(Role.ADMIN);
+
+        if (!isOwner) {
+            throw new BusinessException("You don't have permission to delete this attachment");
+        }
 
         cloudinaryService.deleteFile(
                 attachment.getCloudinaryPublicId()
@@ -72,10 +91,8 @@ public class AttachmentServiceImpl implements AttachmentService {
 
     @Override
     public DownloadedFile downloadAttachment(Long attachmentId) throws IOException {
-
         Attachment attachment = attachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new RuntimeException("Attachment not found"));
-
 
         URL url = new URL(attachment.getCloudinaryUrl());
         byte[] fileData = url.openStream().readAllBytes();

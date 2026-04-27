@@ -23,7 +23,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/tickets")
-@CrossOrigin("*")
 @RequiredArgsConstructor
 public class TicketController {
 
@@ -82,7 +81,6 @@ public class TicketController {
         return ResponseEntity.ok(ticketService.assignTicket(id, request.getAssignedToId()));
     }
 
-    // managerId is now resolved from the JWT — not trusted from the request param
     @PutMapping("/{id}/approve")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
     public ResponseEntity<TicketDTO> approveTicket(

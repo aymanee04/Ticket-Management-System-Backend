@@ -100,7 +100,7 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**",
                                 "/**"
-                        ).permitAll()
+                        ).authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilter(jwtAuthenticationFilter)

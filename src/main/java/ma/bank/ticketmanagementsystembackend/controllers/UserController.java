@@ -11,6 +11,8 @@ import ma.bank.ticketmanagementsystembackend.entities.Role;
 import ma.bank.ticketmanagementsystembackend.exceptions.BusinessException;
 import ma.bank.ticketmanagementsystembackend.exceptions.InvalidPasswordException;
 import ma.bank.ticketmanagementsystembackend.services.UserService;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -90,13 +92,7 @@ public class UserController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String direction) {
-
-        Sort.Direction sortDirection = direction.equalsIgnoreCase("asc")
-                ? Sort.Direction.ASC : Sort.Direction.DESC;
-        org.springframework.data.domain.Pageable pageable =
-                org.springframework.data.domain.PageRequest.of(
-                        page, size, org.springframework.data.domain.Sort.by(sortDirection, sortBy));
-
+        Pageable pageable = buildPageable(page, size, sortBy, direction);
         return ResponseEntity.ok(
                 toPagedResponse(userService.getUsersByClientIdWithPagination(id, pageable)));
     }
@@ -143,5 +139,10 @@ public class UserController {
                 p.getTotalElements(), p.getTotalPages(),
                 p.isLast(), p.isFirst()
         );
+    }
+    private Pageable buildPageable(int page, int size, String sortBy, String direction) {
+        Sort.Direction dir = direction.equalsIgnoreCase("asc")
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return PageRequest.of(page, size, Sort.by(dir, sortBy));
     }
 }

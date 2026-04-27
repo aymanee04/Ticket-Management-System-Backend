@@ -28,8 +28,8 @@ import java.util.stream.Collectors;
 
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
-    private AuthenticationManager authenticationManager;
-    private UserRepository userRepository;
+    private final AuthenticationManager authenticationManager;
+    private final UserRepository userRepository;
 
     public JwtAuthenticationFilter(AuthenticationManager authenticationManager, UserRepository userRepository) {
         this.authenticationManager = authenticationManager;
@@ -78,15 +78,13 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 .withSubject(appUser.getEmail())
                 .withExpiresAt(new Date(System.currentTimeMillis() + JwtUtils.EXPIRE_ACCESS_TOKEN))
                 .withIssuer(request.getRequestURL().toString())
-                .withClaim("userId", appUser.getUserId())
-                .withClaim("name", appUser.getName())
                 .withClaim("email", appUser.getEmail())
-                .withClaim("jobTitle", appUser.getJobTitle() != null ? appUser.getJobTitle() : "")
+                .withClaim("userId", appUser.getUserId())
+                .withClaim("name", appUser.getName() != null ? appUser.getName() : "")
                 .withClaim("roles", appUser.getRoles().stream()
-                        .map(role -> role.name())
+                        .map(Enum::name)
                         .collect(Collectors.toList()))
-                .withClaim("clientId", clientId)
-                .withClaim("clientName", clientName)
+                .withClaim("clientName",clientName)
                 .sign(algorithm);
 
         String jwtRefreshToken = JWT.create()
@@ -113,32 +111,29 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("timestamp", System.currentTimeMillis());
 
-        // Check the exact exception type and set appropriate response
         if (failed.getCause() instanceof DisabledException || failed instanceof DisabledException) {
-            // Account disabled (inactive/suspended client)
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             errorResponse.put("status", 403);
             errorResponse.put("error", "Forbidden");
-            errorResponse.put("message", failed.getMessage()); // This contains the custom message
+            errorResponse.put("message", failed.getMessage());
             errorResponse.put("type", "ACCOUNT_DISABLED");
 
         } else if (failed instanceof BadCredentialsException) {
-            // Wrong password or email
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             errorResponse.put("status", 401);
             errorResponse.put("error", "Unauthorized");
             errorResponse.put("message", "Invalid email or password");
             errorResponse.put("type", "BAD_CREDENTIALS");
 
         } else if (failed instanceof UsernameNotFoundException) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             errorResponse.put("status", 401);
             errorResponse.put("error", "Unauthorized");
             errorResponse.put("message", "Invalid email or password");
             errorResponse.put("type", "BAD_CREDENTIALS");
 
         } else {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             errorResponse.put("status", 401);
             errorResponse.put("error", "Unauthorized");
             errorResponse.put("message", "Authentication failed: " + failed.getMessage());

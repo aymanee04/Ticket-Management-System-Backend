@@ -30,6 +30,7 @@ public class TicketServiceImpl implements TicketService {
     private final ClientRepository clientRepository;
     private final TicketMapper ticketMapper;
     private final EmailService emailService;
+    private final TicketService ticketService;
 
     //  Create
 
