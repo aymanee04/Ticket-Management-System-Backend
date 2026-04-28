@@ -39,8 +39,9 @@ public class ClientController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('USER')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ClientDTO> getClient(@PathVariable Long id) {
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity.ok(clientService.getClientById(id));
     }
 

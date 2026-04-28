@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -54,7 +55,7 @@ public class AttachmentController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('USER')")
-    public ResponseEntity<Void> deleteAttachment(@PathVariable Long id, AppUser user) throws IOException {
+    public ResponseEntity<Void> deleteAttachment(@PathVariable Long id,@AuthenticationPrincipal AppUser user) throws IOException {
         attachmentService.deleteAttachment(id, user);
         return ResponseEntity.noContent().build();
     }

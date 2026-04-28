@@ -8,7 +8,10 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import ma.bank.ticketmanagementsystembackend.controllers.AttachmentController;
 import ma.bank.ticketmanagementsystembackend.security.JwtUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,6 +24,8 @@ import java.util.Collection;
 import java.util.List;
 
 public class JwtAuthorisationFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthorisationFilter.class);
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -60,7 +65,8 @@ public class JwtAuthorisationFilter extends OncePerRequestFilter {
             } catch (Exception e) {
                 System.err.println("JWT Error: " + e.getMessage());
                 e.printStackTrace();
-                response.setHeader("error", e.getMessage());
+                response.setHeader("error", "Invalid or expired token");
+                log.warn("JWT validation failed: {}", e.getMessage());
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 return;
             }

@@ -10,6 +10,7 @@ import ma.bank.ticketmanagementsystembackend.entities.Attachment;
 import ma.bank.ticketmanagementsystembackend.entities.Role;
 import ma.bank.ticketmanagementsystembackend.entities.Ticket;
 import ma.bank.ticketmanagementsystembackend.exceptions.BusinessException;
+import ma.bank.ticketmanagementsystembackend.exceptions.FileUploadException;
 import ma.bank.ticketmanagementsystembackend.exceptions.ResourceNotFoundException;
 import ma.bank.ticketmanagementsystembackend.mappers.AttachmentMapper;
 import ma.bank.ticketmanagementsystembackend.repositories.AttachmentRepository;
@@ -33,14 +34,23 @@ public class AttachmentServiceImpl implements AttachmentService {
     private final AttachmentRepository attachmentRepository;
     private final TicketRepository ticketRepository;
     private final CloudinaryService cloudinaryService;
-    private final Cloudinary cloudinary;
     private final AttachmentMapper attachmentMapper;
     private final UserRepository userRepository;
 
     @Override
     @Transactional
     public AttachmentDTO uploadAttachment(Long ticketId , MultipartFile file) throws IOException {
-        Ticket ticket = ticketRepository.findById(ticketId).orElseThrow(() -> new RuntimeException("ticket not found"));
+        Ticket ticket = ticketRepository.findById(ticketId).orElseThrow(() -> new ResourceNotFoundException("ticket not found"));
+
+        long maxSize = 5 * 1024 * 1024;
+        if (file.isEmpty()) throw new FileUploadException("File is empty");
+        if (file.getSize() > maxSize) throw new FileUploadException("File too large");
+
+        List<String> allowedTypes = List.of("image/png", "image/jpeg", "application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        if (!allowedTypes.contains(file.getContentType())) {
+            throw new FileUploadException("Invalid file type");
+        }
+
         Map<String, String> uploadResult =
                 cloudinaryService.uploadFile(file);
         Attachment attachment = Attachment.builder()

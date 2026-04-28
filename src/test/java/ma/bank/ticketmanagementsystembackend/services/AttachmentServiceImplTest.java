@@ -3,6 +3,7 @@ package ma.bank.ticketmanagementsystembackend.services;
 import com.cloudinary.Cloudinary;
 import ma.bank.ticketmanagementsystembackend.cloudinary.CloudinaryService;
 import ma.bank.ticketmanagementsystembackend.dtos.dto.AttachmentDTO;
+import ma.bank.ticketmanagementsystembackend.entities.AppUser;
 import ma.bank.ticketmanagementsystembackend.entities.Attachment;
 import ma.bank.ticketmanagementsystembackend.entities.Ticket;
 import ma.bank.ticketmanagementsystembackend.mappers.AttachmentMapper;
@@ -44,6 +45,7 @@ class AttachmentServiceImplTest {
     private AttachmentServiceImpl attachmentService;
 
     private Ticket ticket;
+    private AppUser appUser;
     private Attachment attachment;
     private AttachmentDTO attachmentDTO;
 
@@ -142,7 +144,7 @@ class AttachmentServiceImplTest {
 
             when(attachmentRepository.findById(1L)).thenReturn(Optional.of(attachment));
 
-            attachmentService.deleteAttachment(1L);
+            attachmentService.deleteAttachment(1L,appUser);
 
             verify(cloudinaryService).deleteFile("publicId");
             verify(attachmentRepository).delete(attachment);
@@ -155,7 +157,7 @@ class AttachmentServiceImplTest {
             when(attachmentRepository.findById(1L)).thenReturn(Optional.empty());
 
             RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-                attachmentService.deleteAttachment(1L);
+                attachmentService.deleteAttachment(1L,appUser);
             });
 
             assertEquals("Attachment not found", ex.getMessage());

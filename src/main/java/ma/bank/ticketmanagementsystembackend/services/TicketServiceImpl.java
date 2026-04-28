@@ -30,8 +30,6 @@ public class TicketServiceImpl implements TicketService {
     private final ClientRepository clientRepository;
     private final TicketMapper ticketMapper;
     private final EmailService emailService;
-    private final TicketService ticketService;
-
     //  Create
 
     @Override
@@ -108,6 +106,7 @@ public class TicketServiceImpl implements TicketService {
     public TicketDTO assignTicket(Long ticketId, Long assignedToId) {
         Ticket ticket = findTicketById(ticketId);
         AppUser assignee = findUserById(assignedToId, "Assignee not found");
+        requireValidatableStatus(ticket, "assigned");
 
         ticket.setAssignedTo(assignee);
         ticket.setUpdatedAt(LocalDateTime.now());
@@ -141,7 +140,6 @@ public class TicketServiceImpl implements TicketService {
     public TicketDTO rejectTicket(Long ticketId, Long managerId, String comment) {
         Ticket ticket = findTicketById(ticketId);
         AppUser manager = findUserById(managerId, "Manager not found");
-
         requireValidatableStatus(ticket, "rejected");
 
         ticket.setStatus(TicketStatus.REJECTED);
@@ -159,12 +157,7 @@ public class TicketServiceImpl implements TicketService {
     @Transactional
     public TicketDTO archiveTicket(Long ticketId) {
         Ticket ticket = findTicketById(ticketId);
-
-        if (ticket.getStatus() != TicketStatus.VALIDATED &&
-                ticket.getStatus() != TicketStatus.REJECTED) {
-            throw new BusinessException("Only VALIDATED or REJECTED tickets can be archived");
-        }
-
+        requireValidatableStatus(ticket, "archived");
         ticket.setStatus(TicketStatus.ARCHIVED);
         ticket.setUpdatedAt(LocalDateTime.now());
         return ticketMapper.toDTO(ticketRepository.save(ticket));
@@ -174,12 +167,7 @@ public class TicketServiceImpl implements TicketService {
     @Transactional
     public TicketDTO cancelTicket(Long ticketId) {
         Ticket ticket = findTicketById(ticketId);
-
-        if (ticket.getStatus() != TicketStatus.IN_PROGRESS &&
-                ticket.getStatus() != TicketStatus.PENDING_VALIDATION) {
-            throw new BusinessException("Only IN_PROGRESS or PENDING_VALIDATION tickets can be cancelled");
-        }
-
+        requireValidatableStatus(ticket, "cancelled");
         ticket.setStatus(TicketStatus.CANCELLED);
         ticket.setUpdatedAt(LocalDateTime.now());
 //        ticket.setScheduledDeleteAt(LocalDateTime.now().plusDays(SOFT_DELETE_DAYS));
@@ -205,8 +193,18 @@ public class TicketServiceImpl implements TicketService {
     //  Read
 
     @Override
-    public TicketDTO getTicketById(Long id) {
-        return ticketMapper.toDTO(findTicketById(id));
+    public TicketDTO getTicketById(Long id, AppUser currentUser) {
+        Ticket ticket = findTicketById(id);
+
+        if (currentUser.getRoles().contains(Role.ADMIN) || currentUser.getRoles().contains(Role.MANAGER)) {
+            return ticketMapper.toDTO(ticket);
+        }
+
+        if (ticket.getCreatedBy().getUserId().equals(currentUser.getUserId())) {
+            return ticketMapper.toDTO(ticket);
+        }
+
+        throw new BusinessException("You are not allowed to access this ticket");
     }
 
     @Override
@@ -332,7 +330,7 @@ public class TicketServiceImpl implements TicketService {
         if (ticket.getStatus() != TicketStatus.IN_PROGRESS &&
                 ticket.getStatus() != TicketStatus.PENDING_VALIDATION) {
             throw new BusinessException(
-                    "Only IN_PROGRESS tickets can be " + action);
+                    "Only IN_PROGRESS or PENDING_VALIDATION tickets can be " + action);
         }
     }
 

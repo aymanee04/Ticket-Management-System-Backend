@@ -19,7 +19,7 @@ public interface TicketService {
     public TicketDTO archiveTicket(Long ticketId);
     public TicketDTO cancelTicket(Long ticketId);
     public void hardDeleteTicket(Long ticketId);
-    public TicketDTO getTicketById(Long id);
+    public TicketDTO getTicketById(Long id, AppUser currentUser);
     public List<TicketDTO> getAllTickets();
     public List<TicketDTO> getTicketsByStatus(TicketStatus status);
     public List<TicketDTO> getTicketsByUserId(Long userId);

@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import ma.bank.ticketmanagementsystembackend.entities.AppUser;
 import ma.bank.ticketmanagementsystembackend.security.JwtUtils;
 import ma.bank.ticketmanagementsystembackend.services.UserService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -38,13 +39,14 @@ public class AuthController {
 
                 AppUser appUser = userService.loadUserByEmail(email);
 
+
                 String jwtAccessToken = JWT.create()
                         .withSubject(appUser.getEmail())
                         .withExpiresAt(new Date(System.currentTimeMillis() + JwtUtils.EXPIRE_ACCESS_TOKEN))
                         .withIssuer(request.getRequestURL().toString())
+                        .withClaim("email", appUser.getEmail())
                         .withClaim("userId", appUser.getUserId())
                         .withClaim("name", appUser.getName() != null ? appUser.getName() : "")
-                        .withClaim("email", appUser.getEmail())
                         .withClaim("roles", appUser.getRoles().stream()
                                 .map(Enum::name)
                                 .collect(Collectors.toList()))
@@ -65,4 +67,5 @@ public class AuthController {
             throw new RuntimeException("Refresh token is missing");
         }
     }
+
 }

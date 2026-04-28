@@ -10,6 +10,4 @@ import java.util.Optional;
 
 public interface ClientRepository extends JpaRepository<Client, Long> {
     List<Client> findByStatus(ClientStatus status);
-//    List<Client> findByCompany(String company);
-//    Optional<Client> findByEmailOrName(String email, String name);
 }

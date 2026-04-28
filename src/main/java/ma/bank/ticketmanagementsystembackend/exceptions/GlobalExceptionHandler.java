@@ -9,7 +9,6 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
 import java.util.stream.Collectors;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
@@ -17,7 +16,7 @@ import org.springframework.security.core.AuthenticationException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // ── 404 Not Found ─────────────────────────────────────────────────────────
+    //  404 Not Found
     // Thrown by: any service when findById / findByEmail returns empty
     // Services: ClientService, TicketService, UserService, AttachmentService
 
@@ -28,7 +27,7 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(404, "Not Found", ex.getMessage(), "RESOURCE_NOT_FOUND"));
     }
 
-    // ── 400 Bad Request — domain / business rule violations ───────────────────
+    //  400 Bad Request - domain / business rule violations
     // Thrown by: ClientService (already suspended / not suspended)
     //            TicketService (wrong status for approve/reject/archive/cancel,
     //                           empty clientIds, client account not active)
@@ -40,7 +39,7 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(400, "Bad Request", ex.getMessage(), "BUSINESS_RULE_VIOLATION"));
     }
 
-    // ── 409 Conflict — duplicate data ─────────────────────────────────────────
+    //  409 Conflict - duplicate data
     // Thrown by: UserService (email already exists)
 
     @ExceptionHandler(DuplicateResourceException.class)
@@ -50,7 +49,7 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(409, "Conflict", ex.getMessage(), "DUPLICATE_RESOURCE"));
     }
 
-    // ── 400 Bad Request — password rule violations ────────────────────────────
+    //  400 Bad Request - password rule violations
     // Thrown by: UserService (wrong current password, same password, too short)
 
     @ExceptionHandler(InvalidPasswordException.class)
@@ -60,17 +59,24 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(400, "Bad Request", ex.getMessage(), "INVALID_PASSWORD"));
     }
 
-    // ── 422 Unprocessable Entity — file upload failures ───────────────────────
+    @ExceptionHandler(EmailDeliveryException.class)
+    public ResponseEntity<ErrorResponse> handleFailedRequest(EmailDeliveryException ex) {
+        return ResponseEntity
+                .status(HttpStatus.FAILED_DEPENDENCY)
+                .body(ErrorResponse.of(424, "Failed Dependency", ex.getMessage(), "EMAIL_DELIVERY_FAILED"));
+    }
+
+    // 422 Unprocessable Entity - file upload failures
     // Thrown by: AttachmentService (Cloudinary upload/delete IO error)
 
     @ExceptionHandler(FileUploadException.class)
     public ResponseEntity<ErrorResponse> handleFileUpload(FileUploadException ex) {
         return ResponseEntity
-                .status(HttpStatus.UNPROCESSABLE_ENTITY)
-                .body(ErrorResponse.of(422, "File Upload Failed", ex.getMessage(), "FILE_UPLOAD_ERROR"));
+                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(ErrorResponse.of(415, "File Upload Failed", ex.getMessage(), "FILE_UPLOAD_ERROR"));
     }
 
-    // ── 400 Bad Request — Bean Validation (@Valid) ────────────────────────────
+    //  400 Bad Request - Bean Validation (@Valid)
     // Triggered by: SuspendRequest.suspensionReason failing @NotBlank / @Size
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -84,7 +90,7 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(400, "Validation Failed", message, "VALIDATION_ERROR"));
     }
 
-    // ── Security / auth ───────────────────────────────────────────────────────
+    //  Security / auth
 
     @ExceptionHandler(DisabledException.class)
     public ResponseEntity<ErrorResponse> handleDisabled(DisabledException ex) {
@@ -121,7 +127,7 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(401, "Unauthorized", "Authentication is required to access this resource", "UNAUTHORIZED"));
     }
 
-    // ── 500 Fallback ──────────────────────────────────────────────────────────
+    //  500 Fallback
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {

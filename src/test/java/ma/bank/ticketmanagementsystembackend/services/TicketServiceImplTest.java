@@ -621,7 +621,7 @@ class TicketServiceImplTest {
             when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
             when(ticketMapper.toDTO(any(Ticket.class))).thenReturn(ticketDTO);
 
-            TicketDTO result = ticketService.getTicketById(1L);
+            TicketDTO result = ticketService.getTicketById(1L,appUser);
             assertNotNull(result);
             assertEquals(ticketDTO.getTicketId(), result.getTicketId());
 
@@ -636,7 +636,7 @@ class TicketServiceImplTest {
 
             RuntimeException exception = assertThrows(RuntimeException.class, () -> {
                 ticketService.getTicketById(
-                        1L);
+                        1L,appUser);
             });
 
             assertEquals("Ticket not found", exception.getMessage());

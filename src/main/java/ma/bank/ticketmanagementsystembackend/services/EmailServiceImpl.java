@@ -6,6 +6,9 @@ import lombok.RequiredArgsConstructor;
 import ma.bank.ticketmanagementsystembackend.entities.AppUser;
 import ma.bank.ticketmanagementsystembackend.entities.Client;
 import ma.bank.ticketmanagementsystembackend.entities.Ticket;
+import ma.bank.ticketmanagementsystembackend.exceptions.EmailDeliveryException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -21,29 +24,22 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
-    private final JavaMailSender mailSender;
-    private final TemplateEngine templateEngine;
-
-    @Value("${app.email.from:noreply@ticketsystem.com}")
-    private String fromEmail;
-
-    @Value("${app.email.enabled:true}")
-    private Boolean emailEnabled;
-
-    @Value("${app.base.url:http://localhost:4200}")
-    private String baseUrl;
-
+    private static final Logger logger = LoggerFactory.getLogger(EmailServiceImpl.class);
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' HH:mm");
+    private final JavaMailSender mailSender;
+    private final TemplateEngine templateEngine;
+    @Value("${app.email.from:noreply@ticketsystem.com}")
+    private String fromEmail;
+    @Value("${app.email.enabled:true}")
+    private Boolean emailEnabled;
+    @Value("${app.base.url:http://localhost:4200}")
+    private String baseUrl;
 
     @Override
     @Async
     public void sendTicketCreatedEmail(Ticket ticket) {
-        if (emailEnabled == null || !emailEnabled) {
-            System.out.println("Email sending is disabled");
-            return;
-        }
-
+        if (isEmailDisabled()) return;
         try {
             Context context = new Context(Locale.ENGLISH);
             context.setVariable("userName", ticket.getCreatedBy().getName());
@@ -63,19 +59,15 @@ public class EmailServiceImpl implements EmailService {
             );
 
         } catch (Exception e) {
-            System.err.println("Failed to send ticket created email: " + e.getMessage());
-            e.printStackTrace();
+            logger.error(e.getMessage());
+            throw new EmailDeliveryException("Failed to send ticket created email");
         }
     }
 
     @Override
     @Async
     public void sendTicketAssignedEmail(Ticket ticket, AppUser assignedTo) {
-        if (emailEnabled == null || !emailEnabled) {
-            System.out.println("Email sending is disabled");
-            return;
-        }
-
+        if (isEmailDisabled()) return;
         try {
             Context context = new Context(Locale.ENGLISH);
             context.setVariable("managerName", assignedTo.getName());
@@ -96,19 +88,15 @@ public class EmailServiceImpl implements EmailService {
             );
 
         } catch (Exception e) {
-            System.err.println("Failed to send ticket assigned email: " + e.getMessage());
-            e.printStackTrace();
+            logger.error(e.getMessage());
+            throw new EmailDeliveryException("Failed to send ticket assigned email");
         }
     }
 
     @Override
     @Async
     public void sendTicketValidatedEmail(Ticket ticket) {
-        if (emailEnabled == null || !emailEnabled) {
-            System.out.println("Email sending is disabled");
-            return;
-        }
-
+        if (isEmailDisabled()) return;
         try {
             Context context = new Context(Locale.ENGLISH);
             context.setVariable("userName", ticket.getCreatedBy().getName());
@@ -143,19 +131,15 @@ public class EmailServiceImpl implements EmailService {
             });
 
         } catch (Exception e) {
-            System.err.println("Failed to send ticket validated email: " + e.getMessage());
-            e.printStackTrace();
+            logger.error(e.getMessage());
+            throw new EmailDeliveryException("Failed to send ticket validated email");
         }
     }
 
     @Override
     @Async
     public void sendTicketRejectedEmail(Ticket ticket) {
-        if (emailEnabled == null || !emailEnabled) {
-            System.out.println("Email sending is disabled");
-            return;
-        }
-
+        if (isEmailDisabled()) return;
         try {
             Context context = new Context(Locale.ENGLISH);
             context.setVariable("userName", ticket.getCreatedBy().getName());
@@ -177,19 +161,15 @@ public class EmailServiceImpl implements EmailService {
             );
 
         } catch (Exception e) {
-            System.err.println("Failed to send ticket rejected email: " + e.getMessage());
-            e.printStackTrace();
+            logger.error(e.getMessage());
+            throw new EmailDeliveryException("Failed to send ticket rejected email:");
         }
     }
 
     @Override
     @Async
     public void sendClientSuspendedEmail(Client client) {
-        if (emailEnabled == null || !emailEnabled) {
-            System.out.println("⚠️ Email sending is disabled");
-            return;
-        }
-
+        if (isEmailDisabled()) return;
         try {
             Context context = new Context(Locale.ENGLISH);
             context.setVariable("companyName", client.getCompany());
@@ -211,19 +191,15 @@ public class EmailServiceImpl implements EmailService {
             }
 
         } catch (Exception e) {
-            System.err.println("Failed to send client suspended email: " + e.getMessage());
-            e.printStackTrace();
+            logger.error(e.getMessage());
+            throw new EmailDeliveryException("Failed to send client suspended email");
         }
     }
 
     @Override
     @Async
     public void sendClientReactivatedEmail(Client client) {
-        if (emailEnabled == null || !emailEnabled) {
-            System.out.println("Email sending is disabled");
-            return;
-        }
-
+        if (isEmailDisabled()) return;
         try {
             Context context = new Context(Locale.ENGLISH);
             context.setVariable("companyName", client.getCompany());
@@ -243,19 +219,15 @@ public class EmailServiceImpl implements EmailService {
             }
 
         } catch (Exception e) {
-            System.err.println("Failed to send client reactivated email: " + e.getMessage());
-            e.printStackTrace();
+            logger.error(e.getMessage());
+            throw new EmailDeliveryException("Failed to send client reactivated email");
         }
     }
 
     @Override
     @Async
     public void sendPasswordChangedEmail(AppUser user) {
-        if (emailEnabled == null || !emailEnabled) {
-            System.out.println("Email sending is disabled");
-            return;
-        }
-
+        if (isEmailDisabled()) return;
         try {
             Context context = new Context(Locale.ENGLISH);
             context.setVariable("userName", user.getName());
@@ -271,8 +243,8 @@ public class EmailServiceImpl implements EmailService {
             );
 
         } catch (Exception e) {
-            System.err.println("Failed to send password changed email: " + e.getMessage());
-            e.printStackTrace();
+            logger.error(e.getMessage());
+            throw new EmailDeliveryException("Failed to send password changed email");
         }
     }
 
@@ -303,19 +275,15 @@ public class EmailServiceImpl implements EmailService {
             );
 
         } catch (Exception e) {
-            System.err.println("Failed to send welcome email: " + e.getMessage());
-            e.printStackTrace();
+            logger.error(e.getMessage());
+            throw new EmailDeliveryException("Failed to send welcome email");
         }
     }
 
     @Override
     @Async
     public void sendIncidentNotification(Ticket incident) {
-        if (emailEnabled == null || !emailEnabled) {
-            System.out.println("Email sending is disabled");
-            return;
-        }
-
+        if (isEmailDisabled()) return;
         try {
             Context context = new Context(Locale.ENGLISH);
             context.setVariable("incidentId", incident.getTicketId());
@@ -341,8 +309,8 @@ public class EmailServiceImpl implements EmailService {
             });
 
         } catch (Exception e) {
-            System.err.println("Failed to send incident notification: " + e.getMessage());
-            e.printStackTrace();
+            logger.error(e.getMessage());
+            throw new EmailDeliveryException("Failed to send incident notification email");
         }
     }
 
@@ -363,5 +331,13 @@ public class EmailServiceImpl implements EmailService {
             System.err.println("Failed to send email to " + to + ": " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private boolean isEmailDisabled(){
+        if (emailEnabled == null || !emailEnabled) {
+            logger.info("Email sending is disabled");
+            return true;
+        }
+        return false;
     }
 }
