@@ -9,6 +9,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import ma.bank.ticketmanagementsystembackend.controllers.AttachmentController;
+import ma.bank.ticketmanagementsystembackend.exceptions.ErrorResponse;
 import ma.bank.ticketmanagementsystembackend.security.JwtUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,11 +66,30 @@ public class JwtAuthorisationFilter extends OncePerRequestFilter {
             } catch (Exception e) {
                 System.err.println("JWT Error: " + e.getMessage());
                 e.printStackTrace();
-                response.setHeader("error", "Invalid or expired token");
                 log.warn("JWT validation failed: {}", e.getMessage());
-                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+
+                try {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType("application/json");
+                    response.setCharacterEncoding("UTF-8");
+
+                    ErrorResponse errorResponse = ErrorResponse.of(
+                            403,
+                            "Forbidden",
+                            "Invalid or expired token",
+                            "JWT_VALIDATION_FAILED"
+                    );
+
+                    String jsonResponse = new com.fasterxml.jackson.databind.ObjectMapper()
+                            .writeValueAsString(errorResponse);
+
+                    response.getWriter().write(jsonResponse);
+                } catch (IOException ioException) {
+                    log.error("Failed to write error response: {}", ioException.getMessage());
+                }
                 return;
             }
+
         }
 
         filterChain.doFilter(request, response);

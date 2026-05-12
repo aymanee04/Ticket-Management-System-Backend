@@ -2,6 +2,7 @@ package ma.bank.ticketmanagementsystembackend.controllers;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import ma.bank.ticketmanagementsystembackend.PaginationUtils;
 import ma.bank.ticketmanagementsystembackend.dtos.ChangePasswordRequest;
 import ma.bank.ticketmanagementsystembackend.dtos.CreateUserRequest;
 import ma.bank.ticketmanagementsystembackend.dtos.PagedResponse;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
@@ -40,8 +42,9 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('USER')")
+    @PreAuthorize("#userId == authentication.principal.userId or hasAuthority('ADMIN')")
     public ResponseEntity<AppUserDTO> updateUser(
+            @P("userId")
             @PathVariable Long id,
             @RequestBody @Valid UpdateUserRequest request) {
         return ResponseEntity.ok(userService.updateUser(id, request));
@@ -91,9 +94,9 @@ public class UserController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String direction) {
-        Pageable pageable = buildPageable(page, size, sortBy, direction);
+        Pageable pageable = PaginationUtils.buildPageable(page, size, sortBy, direction);
         return ResponseEntity.ok(
-                toPagedResponse(userService.getUsersByClientIdWithPagination(id, pageable)));
+                PaginationUtils.toPagedResponse(userService.getUsersByClientIdWithPagination(id, pageable)));
     }
 
     @GetMapping(value = "/search", params = "page")
@@ -109,8 +112,9 @@ public class UserController {
     }
 
     @PutMapping("/{id}/change-password")
-    @PreAuthorize("hasAuthority('USER')")
+    @PreAuthorize("#userId == authentication.principal.userId or hasAuthority('USER')")
     public ResponseEntity<Map<String, String>> changePassword(
+            @P("userId")
             Authentication auth,
             @PathVariable Long id,
             @RequestBody @Valid ChangePasswordRequest request) {
@@ -128,20 +132,5 @@ public class UserController {
         userService.changePassword(id, request.getCurrentPassword(), request.getNewPassword());
 
         return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
-    }
-
-    // Private helper
-
-    private <T> PagedResponse<T> toPagedResponse(org.springframework.data.domain.Page<T> p) {
-        return new PagedResponse<>(
-                p.getContent(), p.getNumber(), p.getSize(),
-                p.getTotalElements(), p.getTotalPages(),
-                p.isLast(), p.isFirst()
-        );
-    }
-    private Pageable buildPageable(int page, int size, String sortBy, String direction) {
-        Sort.Direction dir = direction.equalsIgnoreCase("asc")
-                ? Sort.Direction.ASC : Sort.Direction.DESC;
-        return PageRequest.of(page, size, Sort.by(dir, sortBy));
     }
 }

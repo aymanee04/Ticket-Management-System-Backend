@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -106,6 +107,9 @@ public class TicketServiceImpl implements TicketService {
     public TicketDTO assignTicket(Long ticketId, Long assignedToId) {
         Ticket ticket = findTicketById(ticketId);
         AppUser assignee = findUserById(assignedToId, "Assignee not found");
+        if (!assignee.getClient().equals(ticket.getCreatedBy().getClient())){
+            throw new BusinessException("Assignee must belong to the same client as the ticket creator");
+        }
         requireValidatableStatus(ticket, "assigned");
 
         ticket.setAssignedTo(assignee);
@@ -157,7 +161,11 @@ public class TicketServiceImpl implements TicketService {
     @Transactional
     public TicketDTO archiveTicket(Long ticketId) {
         Ticket ticket = findTicketById(ticketId);
-        requireValidatableStatus(ticket, "archived");
+        if (ticket.getStatus() != TicketStatus.VALIDATED &&
+                ticket.getStatus() != TicketStatus.REJECTED) {
+            throw new BusinessException(
+                    "Only VALIDATED or REJECTED tickets can be archived");
+        }
         ticket.setStatus(TicketStatus.ARCHIVED);
         ticket.setUpdatedAt(LocalDateTime.now());
         return ticketMapper.toDTO(ticketRepository.save(ticket));
@@ -176,7 +184,7 @@ public class TicketServiceImpl implements TicketService {
     }
 
     //  Delete
-
+///
     @Override
     @Transactional
     public void hardDeleteTicket(Long ticketId) {
@@ -191,19 +199,30 @@ public class TicketServiceImpl implements TicketService {
     }
 
     //  Read
-
+///
     @Override
     public TicketDTO getTicketById(Long id, AppUser currentUser) {
         Ticket ticket = findTicketById(id);
+        Collection<Role> roles = currentUser.getRoles();
 
-        if (currentUser.getRoles().contains(Role.ADMIN) || currentUser.getRoles().contains(Role.MANAGER)) {
+        if (roles.contains(Role.ADMIN)) {
             return ticketMapper.toDTO(ticket);
         }
 
-        if (ticket.getCreatedBy().getUserId().equals(currentUser.getUserId())) {
-            return ticketMapper.toDTO(ticket);
+        if (roles.contains(Role.MANAGER) && currentUser.getClient() != null) {
+            boolean sameClient = ticket.getClients().stream()
+                    .anyMatch(client ->
+                            client.getClientId().equals(currentUser.getClient().getClientId())
+                    );
+            if (sameClient) {
+                return ticketMapper.toDTO(ticket);
+            }
         }
 
+        if (ticket.getCreatedBy() != null &&
+                ticket.getCreatedBy().getUserId().equals(currentUser.getUserId())) {
+            return ticketMapper.toDTO(ticket);
+        }
         throw new BusinessException("You are not allowed to access this ticket");
     }
 
@@ -275,7 +294,7 @@ public class TicketServiceImpl implements TicketService {
     }
 
     //  Role-scoped paginated
-
+///
     @Override
     public Page<TicketDTO> getTicketsPagedForUser(AppUser currentUser, Pageable pageable) {
         if (isAdminOrManager(currentUser)) {
@@ -286,7 +305,7 @@ public class TicketServiceImpl implements TicketService {
         }
         return Page.empty(pageable);
     }
-
+///
     @Override
     public Page<TicketDTO> getTicketsByStatusPagedForUser(TicketStatus status, AppUser currentUser, Pageable pageable) {
         if (isAdminOrManager(currentUser)) {
@@ -295,9 +314,9 @@ public class TicketServiceImpl implements TicketService {
         if (currentUser.getClient() != null) {
             return getTicketsByStatusAndClient(status, currentUser.getClient().getClientId(), pageable);
         }
-        return Page.empty(pageable);
+        throw new BusinessException("You are not allowed to access those tickets");
     }
-
+///
     @Override
     public Page<TicketDTO> searchTicketsPagedForUser(String q, AppUser currentUser, Pageable pageable) {
         if (isAdminOrManager(currentUser)) {
@@ -333,7 +352,7 @@ public class TicketServiceImpl implements TicketService {
                     "Only IN_PROGRESS or PENDING_VALIDATION tickets can be " + action);
         }
     }
-
+///
     private boolean isAdminOrManager(AppUser user) {
         return user.getRoles().contains(Role.ADMIN) ||
                 user.getRoles().contains(Role.MANAGER);

@@ -2,6 +2,8 @@ package ma.bank.ticketmanagementsystembackend.services;
 
 import ma.bank.ticketmanagementsystembackend.dtos.dto.TicketDTO;
 import ma.bank.ticketmanagementsystembackend.entities.*;
+import ma.bank.ticketmanagementsystembackend.exceptions.BusinessException;
+import ma.bank.ticketmanagementsystembackend.exceptions.ResourceNotFoundException;
 import ma.bank.ticketmanagementsystembackend.mappers.TicketMapper;
 import ma.bank.ticketmanagementsystembackend.repositories.ClientRepository;
 import ma.bank.ticketmanagementsystembackend.repositories.TicketRepository;
@@ -18,8 +20,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -306,6 +310,7 @@ class TicketServiceImplTest {
         @Test
         @DisplayName("Should Assign ticket successfully")
         void shouldAssignTicketSuccessfully(){
+            ticket.setStatus(TicketStatus.IN_PROGRESS);
             when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
             when(userRepository.findById(1L)).thenReturn(Optional.of(appUser));
             when(ticketRepository.save(any(Ticket.class))).thenReturn(ticket);
@@ -313,6 +318,9 @@ class TicketServiceImplTest {
 
             TicketDTO result = ticketService.assignTicket(1L,1L);
             assertNotNull(result);
+
+            ticket.setAssignedTo(appUser);
+            ticket.setUpdatedAt(LocalDateTime.now());
 
             Ticket assignedTicket = ticketRepository.save(ticket);
 
@@ -419,11 +427,11 @@ class TicketServiceImplTest {
             when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
             when(userRepository.findById(1L)).thenReturn(Optional.of(appUser));
 
-            RuntimeException exception = assertThrows(RuntimeException.class, () ->
+            BusinessException exception = assertThrows(BusinessException.class, () ->
                     ticketService.approveTicket(
                             1L, 1L, "comment"));
 
-            assertEquals("Only IN_PROGRESS tickets can be approved",exception.getMessage());
+            assertEquals("Only IN_PROGRESS or PENDING_VALIDATION tickets can be approved",exception.getMessage());
 
             verify(ticketRepository, never()).save(any());
        };
@@ -495,11 +503,11 @@ class TicketServiceImplTest {
             when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
             when(userRepository.findById(1L)).thenReturn(Optional.of(appUser));
 
-            RuntimeException exception = assertThrows(RuntimeException.class, () ->
+            BusinessException exception = assertThrows(BusinessException.class, () ->
                     ticketService.rejectTicket(
                             1L, 1L, "comment"));
 
-            assertEquals("Only IN_PROGRESS tickets can be rejected",exception.getMessage());
+            assertEquals("Only IN_PROGRESS or PENDING_VALIDATION tickets can be rejected",exception.getMessage());
 
             verify(ticketRepository, never()).save(any());
         };
@@ -532,7 +540,7 @@ class TicketServiceImplTest {
         void shouldThrowTicketNotFound(){
             when(ticketRepository.findById(1L)).thenReturn(Optional.empty());
 
-            RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
                 ticketService.archiveTicket(
                         1L);
             });
@@ -549,7 +557,7 @@ class TicketServiceImplTest {
 
             when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
 
-            RuntimeException exception = assertThrows(RuntimeException.class, () ->
+            BusinessException exception = assertThrows(BusinessException.class, () ->
                     ticketService.archiveTicket( 1L));
 
             assertEquals("Only VALIDATED or REJECTED tickets can be archived",exception.getMessage());
@@ -602,11 +610,11 @@ class TicketServiceImplTest {
             ticket.setStatus(TicketStatus.VALIDATED);
             when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
 
-            RuntimeException exception = assertThrows(RuntimeException.class, () ->
+            BusinessException exception = assertThrows(BusinessException.class, () ->
                     ticketService.cancelTicket(
                             1L));
 
-            assertEquals("Only IN_PROGRESS tickets can be cancelled",exception.getMessage());
+            assertEquals("Only IN_PROGRESS or PENDING_VALIDATION tickets can be cancelled",exception.getMessage());
 
             verify(ticketRepository, never()).save(any());
         };
@@ -616,8 +624,39 @@ class TicketServiceImplTest {
     @DisplayName("Get ticket by id test")
     class GetTicketByIdTest {
         @Test
-        @DisplayName("Should get ticket by id successfully")
-        void shouldGetTicketByIdSuccessfully(){
+        @DisplayName("Should get ticket by id successfully when role equals ADMIN")
+        void shouldGetTicketByIdSuccessfullyWhenAdmin(){
+            appUser.setRoles(Set.of(Role.ADMIN));
+            when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+            when(ticketMapper.toDTO(any(Ticket.class))).thenReturn(ticketDTO);
+
+            TicketDTO result = ticketService.getTicketById(1L,appUser);
+            assertNotNull(result);
+            assertEquals(ticketDTO.getTicketId(), result.getTicketId());
+
+            verify(ticketRepository).findById(1L);
+            verify(ticketMapper).toDTO(ticket);
+        }
+
+        @Test
+        @DisplayName("Should get ticket by id successfully when role equals MANAGER and same client")
+        void shouldGetTicketByIdSuccessfullyWhenManager(){
+            appUser.setRoles(Set.of(Role.MANAGER));
+            when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+            when(ticketMapper.toDTO(any(Ticket.class))).thenReturn(ticketDTO);
+
+            TicketDTO result = ticketService.getTicketById(1L,appUser);
+            assertNotNull(result);
+            assertEquals(ticketDTO.getTicketId(), result.getTicketId());
+
+            verify(ticketRepository).findById(1L);
+            verify(ticketMapper).toDTO(ticket);
+        }
+
+        @Test
+        @DisplayName("Should get ticket by id successfully when role equals USER")
+        void shouldGetTicketByIdSuccessfullyWhenUser(){
+            appUser.setRoles(Set.of(Role.USER));
             when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
             when(ticketMapper.toDTO(any(Ticket.class))).thenReturn(ticketDTO);
 
@@ -634,12 +673,34 @@ class TicketServiceImplTest {
         void shouldThrowTicketNotFound(){
             when(ticketRepository.findById(1L)).thenReturn(Optional.empty());
 
-            RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            RuntimeException exception = assertThrows(ResourceNotFoundException.class, () -> {
                 ticketService.getTicketById(
                         1L,appUser);
             });
 
             assertEquals("Ticket not found", exception.getMessage());
+
+            verify(ticketRepository).findById(1L);
+            verify(ticketMapper,never()).toDTO(any());        }
+
+        @Test
+        @DisplayName("Should throw exception when not allowed")
+        void shouldThrowNotAllowed(){
+            AppUser other = new AppUser();
+            other.setUserId(49L);
+            other.setRoles(Set.of(Role.USER));
+            other.setClient(client2);
+
+            ticket.setCreatedBy(appUser);
+
+            when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                ticketService.getTicketById(
+                        1L,other);
+            });
+
+            assertEquals("You are not allowed to access this ticket", exception.getMessage());
 
             verify(ticketRepository).findById(1L);
             verify(ticketMapper,never()).toDTO(any());        }
@@ -845,6 +906,86 @@ class TicketServiceImplTest {
 
             verify(ticketRepository).searchTicketsByClient("search",1L,pageable);
             verify(ticketMapper).toDTO(ticket);
+        }
+    }
+
+    @Nested
+    @DisplayName("Query filtered methods test")
+    class QueryFilteredMethodes{
+        @Test
+        @DisplayName("Should getAllTicketsWithPagination when isAdminOrManager equals true successfully")
+        void getTicketsPagedForUser(){
+            appUser.setRoles(Set.of(Role.ADMIN));
+            Page<Ticket> page = new PageImpl<>(List.of(ticket));
+            Pageable pageable = PageRequest.of(0, 10);
+
+            when(ticketRepository.findAll(pageable)).thenReturn(page);
+            when(ticketMapper.toDTO(ticket)).thenReturn(new TicketDTO());
+
+            Page<TicketDTO> result =
+                    ticketService.getTicketsPagedForUser(appUser, pageable);
+
+            assertEquals(1, result.getContent().size());
+            verify(ticketRepository).findAll(any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("Should getTicketsPagedForUser when tickets client equals the user client")
+        void getTicketsPagedForUser_client_shouldReturnClientTickets() {
+            appUser.setRoles(Set.of(Role.USER));
+
+            Page<Ticket> page = new PageImpl<>(List.of(ticket));
+
+            when(ticketRepository.findByClients_ClientId(1L, pageable))
+                    .thenReturn(page);
+            when(ticketMapper.toDTO(ticket)).thenReturn(new TicketDTO());
+
+            Page<TicketDTO> result =
+                    ticketService.getTicketsPagedForUser(
+                            appUser, pageable);
+
+            assertEquals(1, result.getContent().size());
+            verify(ticketRepository).findByClients_ClientId(1L, pageable);
+        }
+
+        @Test
+        @DisplayName("should return empty page when user don't belong to the ticket client")
+        void getTicketsPagedForUser_noAccess_shouldReturnEmpty() {
+
+        }
+
+        @Test
+        @DisplayName("Should getTicketsByStatusWithPagination when isAdminOrManager equals true successfully")
+        void getTicketsByStatusPagedForNonUser(){
+            appUser.setRoles(Set.of(Role.MANAGER));
+            Page<Ticket> page = new PageImpl<>(List.of(ticket));
+            Pageable pageable = PageRequest.of(0, 10);
+
+            when(ticketRepository.findByStatus(TicketStatus.IN_PROGRESS, pageable)).thenReturn(page);
+            when(ticketMapper.toDTO(any())).thenReturn(new TicketDTO());
+
+            Page<TicketDTO> result =
+                    ticketService.getTicketsByStatusPagedForUser(
+                            TicketStatus.IN_PROGRESS, appUser, pageable);
+
+            assertEquals(1, result.getContent().size());
+        }
+
+        @Test
+        @DisplayName("Should getTicketsByStatusAndClient when tickets client equals the user client")
+        void getTicketsByStatusPagedForUser(){
+            appUser.setRoles(Set.of(Role.USER));
+            Page<Ticket> page = new PageImpl<>(List.of(ticket));
+            Pageable pageable = PageRequest.of(0, 10);
+
+            when(ticketRepository.findByStatusAndClients_ClientId(TicketStatus.IN_PROGRESS, 1L, pageable)).thenReturn(page);
+            when(ticketMapper.toDTO(any())).thenReturn(new TicketDTO());
+
+            Page<TicketDTO> result =
+                    ticketService.getTicketsByStatusPagedForUser(
+                            TicketStatus.IN_PROGRESS, appUser, pageable);
+
+            assertEquals(1, result.getContent().size());
         }
     }
 

@@ -66,7 +66,7 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(424, "Failed Dependency", ex.getMessage(), "EMAIL_DELIVERY_FAILED"));
     }
 
-    // 422 Unprocessable Entity - file upload failures
+    // 415 Unsupported Media Type - file upload errors
     // Thrown by: AttachmentService (Cloudinary upload/delete IO error)
 
     @ExceptionHandler(FileUploadException.class)

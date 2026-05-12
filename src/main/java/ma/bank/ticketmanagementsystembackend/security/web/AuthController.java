@@ -9,9 +9,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import ma.bank.ticketmanagementsystembackend.entities.AppUser;
+import ma.bank.ticketmanagementsystembackend.entities.ClientStatus;
 import ma.bank.ticketmanagementsystembackend.security.JwtUtils;
 import ma.bank.ticketmanagementsystembackend.services.UserService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -38,6 +41,21 @@ public class AuthController {
                 String email = decodedJWT.getSubject();
 
                 AppUser appUser = userService.loadUserByEmail(email);
+                if (appUser == null) {
+                    throw new UsernameNotFoundException("User not found with email: " + email);
+                }
+                if (appUser.getClient() != null) {
+                    if (appUser.getClient().getStatus() == ClientStatus.INACTIVE) {
+                        throw new DisabledException(
+                                "Your company account is currently inactive. Please contact support."
+                        );
+                    }
+                    if (appUser.getClient().getStatus() == ClientStatus.SUSPENDED) {
+                        throw new DisabledException(
+                                "Your company account has been suspended. Please contact support."
+                        );
+                    }
+                }
 
 
                 String jwtAccessToken = JWT.create()

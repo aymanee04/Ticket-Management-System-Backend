@@ -36,9 +36,14 @@ public class ClientServiceImpl implements ClientService {
     @Override
     @Transactional
     public ClientDTO updateClient(Long id, Client client) {
-        findClientById(id);
-        client.setClientId(id);
-        return clientMapper.toDTO(clientRepository.save(client));
+        Client updatedClient = findClientById(id);
+
+        updatedClient.setName(client.getName());
+        updatedClient.setEmail(client.getEmail());
+        updatedClient.setPhone(client.getPhone());
+        updatedClient.setCompany(client.getCompany());
+
+        return clientMapper.toDTO(clientRepository.save(updatedClient));
     }
 
     @Override

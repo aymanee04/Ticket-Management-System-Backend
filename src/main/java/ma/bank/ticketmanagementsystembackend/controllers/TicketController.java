@@ -2,6 +2,7 @@ package ma.bank.ticketmanagementsystembackend.controllers;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import ma.bank.ticketmanagementsystembackend.PaginationUtils;
 import ma.bank.ticketmanagementsystembackend.dtos.*;
 import ma.bank.ticketmanagementsystembackend.dtos.dto.TicketDTO;
 import ma.bank.ticketmanagementsystembackend.entities.AppUser;
@@ -131,8 +132,10 @@ public class TicketController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('USER')")
-    public ResponseEntity<TicketDTO> getTicket(@PathVariable Long id, @AuthenticationPrincipal AppUser user) {
-        return ResponseEntity.ok(ticketService.getTicketById(id, user));
+    public ResponseEntity<TicketDTO> getTicket(@PathVariable Long id,
+                                                Authentication auth) {
+        AppUser currentUser = userService.loadUserByEmail(auth.getName());
+        return ResponseEntity.ok(ticketService.getTicketById(id, currentUser));
     }
 
     @GetMapping
@@ -182,10 +185,10 @@ public class TicketController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String direction) {
 
-        Pageable pageable = buildPageable(page, size, sortBy, direction);
+        Pageable pageable = PaginationUtils.buildPageable(page, size, sortBy, direction);
         AppUser currentUser = userService.loadUserByEmail(auth.getName());
         return ResponseEntity.ok(
-                toPagedResponse(ticketService.getTicketsPagedForUser(currentUser, pageable)));
+                PaginationUtils.toPagedResponse(ticketService.getTicketsPagedForUser(currentUser, pageable)));
     }
 
     @GetMapping(value = "/status/{status}", params = "page")
@@ -200,7 +203,7 @@ public class TicketController {
                 Sort.by(Sort.Direction.DESC, "createdAt"));
         AppUser currentUser = userService.loadUserByEmail(auth.getName());
         return ResponseEntity.ok(
-                toPagedResponse(ticketService.getTicketsByStatusPagedForUser(status, currentUser, pageable)));
+                PaginationUtils.toPagedResponse(ticketService.getTicketsByStatusPagedForUser(status, currentUser, pageable)));
     }
 
     @GetMapping(value = "/search", params = "page")
@@ -215,22 +218,8 @@ public class TicketController {
                 Sort.by(Sort.Direction.DESC, "createdAt"));
         AppUser currentUser = userService.loadUserByEmail(auth.getName());
         return ResponseEntity.ok(
-                toPagedResponse(ticketService.searchTicketsPagedForUser(q, currentUser, pageable)));
+                PaginationUtils.toPagedResponse(ticketService.searchTicketsPagedForUser(q, currentUser, pageable)));
     }
 
-    //  Private helpers
 
-    private Pageable buildPageable(int page, int size, String sortBy, String direction) {
-        Sort.Direction dir = direction.equalsIgnoreCase("asc")
-                ? Sort.Direction.ASC : Sort.Direction.DESC;
-        return PageRequest.of(page, size, Sort.by(dir, sortBy));
-    }
-
-    private <T> PagedResponse<T> toPagedResponse(Page<T> p) {
-        return new PagedResponse<>(
-                p.getContent(), p.getNumber(), p.getSize(),
-                p.getTotalElements(), p.getTotalPages(),
-                p.isLast(), p.isFirst()
-        );
-    }
 }

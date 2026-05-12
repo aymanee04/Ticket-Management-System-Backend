@@ -10,7 +10,6 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 public interface UserService {
-
     AppUserDTO createUser(CreateUserRequest request);
     AppUserDTO updateUser(Long id, UpdateUserRequest request);
     void changePassword(Long userId, String currentPassword, String newPassword);

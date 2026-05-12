@@ -48,7 +48,7 @@ public class AttachmentController {
     }
 
     @GetMapping("/ticket/{ticketId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('USER')")
     public ResponseEntity<List<AttachmentDTO>> getAttachmentsByTicket(@PathVariable Long ticketId) {
         return ResponseEntity.ok(attachmentService.getAttachmentsByTicket(ticketId));
     }
