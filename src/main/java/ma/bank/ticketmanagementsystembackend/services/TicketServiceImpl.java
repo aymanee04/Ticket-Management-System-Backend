@@ -107,8 +107,13 @@ public class TicketServiceImpl implements TicketService {
     public TicketDTO assignTicket(Long ticketId, Long assignedToId) {
         Ticket ticket = findTicketById(ticketId);
         AppUser assignee = findUserById(assignedToId, "Assignee not found");
-        if (!assignee.getClient().equals(ticket.getCreatedBy().getClient())){
-            throw new BusinessException("Assignee must belong to the same client as the ticket creator");
+        boolean isAdmin = assignee.getRoles().contains(Role.ADMIN);
+        if (!isAdmin) {
+            if (assignee.getClient() == null ||
+                    !assignee.getClient().equals(ticket.getCreatedBy().getClient())) {
+                throw new BusinessException(
+                        "Assignee must belong to the same client as the ticket creator");
+            }
         }
         requireValidatableStatus(ticket, "assigned");
 

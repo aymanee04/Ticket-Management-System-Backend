@@ -1,12 +1,13 @@
 package ma.bank.ticketmanagementsystembackend.security;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import ma.bank.ticketmanagementsystembackend.entities.AppUser;
 import ma.bank.ticketmanagementsystembackend.entities.ClientStatus;
 import ma.bank.ticketmanagementsystembackend.repositories.UserRepository;
 import ma.bank.ticketmanagementsystembackend.security.filters.JwtAuthenticationFilter;
 import ma.bank.ticketmanagementsystembackend.security.filters.JwtAuthorisationFilter;
 import ma.bank.ticketmanagementsystembackend.services.UserService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -33,11 +34,13 @@ import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
-@AllArgsConstructor
+@RequiredArgsConstructor
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
     private final UserService userService;
     private final UserRepository userRepository;
+    @Value("${app.cors.allowed-origins}")
+    private String allowedOrigins;
 
 
     @Bean
@@ -110,7 +113,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
+        List<String> origins = Arrays.asList(allowedOrigins.split(","));
+        configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
