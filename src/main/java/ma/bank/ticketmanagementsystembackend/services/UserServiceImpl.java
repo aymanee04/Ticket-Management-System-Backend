@@ -15,6 +15,8 @@ import ma.bank.ticketmanagementsystembackend.exceptions.ResourceNotFoundExceptio
 import ma.bank.ticketmanagementsystembackend.mappers.AppUserMapper;
 import ma.bank.ticketmanagementsystembackend.repositories.ClientRepository;
 import ma.bank.ticketmanagementsystembackend.repositories.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +41,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "users", allEntries = true)
     public AppUserDTO createUser(CreateUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Email already exists");
@@ -75,6 +78,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "users", allEntries = true)
     public AppUserDTO updateUser(Long id, UpdateUserRequest request) {
         AppUser user = findUserById(id);
         user.setName(request.getName());
@@ -85,6 +89,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "users", allEntries = true)
     public void changePassword(Long userId, String currentPassword, String newPassword) {
         AppUser user = findUserById(userId);
 
@@ -123,6 +128,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Cacheable(value = "users", key = "#id")
     public AppUserDTO getUserById(long id) {
         return appUserMapper.toDTO(findUserById(id));
     }
@@ -134,6 +140,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Cacheable(value = "users", key = "'client:' + #id")
     public List<AppUserDTO> getUserByClientId(Long id) {
         return userRepository.findByClient_ClientId(id)
                 .stream().map(appUserMapper::toDTO).toList();
@@ -155,6 +162,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Cacheable(value = "users", key = "'email:' + #email")
     public AppUserDTO getUserByEmail(String email) {
         return appUserMapper.toDTO(loadUserByEmail(email));
     }

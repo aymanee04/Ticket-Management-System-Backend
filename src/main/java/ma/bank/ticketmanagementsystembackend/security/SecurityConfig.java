@@ -8,6 +8,7 @@ import ma.bank.ticketmanagementsystembackend.security.filters.JwtAuthenticationF
 import ma.bank.ticketmanagementsystembackend.security.filters.JwtAuthorisationFilter;
 import ma.bank.ticketmanagementsystembackend.services.UserService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -41,6 +42,7 @@ public class SecurityConfig {
     private final UserRepository userRepository;
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
+    private final ApplicationContext applicationContext;
 
 
     @Bean
@@ -86,7 +88,7 @@ public class SecurityConfig {
         JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(authManager, userRepository);
         jwtAuthenticationFilter.setFilterProcessesUrl("/auth/login");
 
-        JwtAuthorisationFilter jwtAuthorisationFilter = new JwtAuthorisationFilter();
+        JwtAuthorisationFilter jwtAuthorisationFilter = new JwtAuthorisationFilter(applicationContext);
 
         http
                 .cors(Customizer.withDefaults())
@@ -95,7 +97,7 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/auth/login",  "/auth/refreshToken").permitAll()
+                        .requestMatchers("/auth/login",  "/auth/refreshToken", "/auth/logout","/actuator/health").permitAll()
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
@@ -118,7 +120,9 @@ public class SecurityConfig {
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
-        configuration.setExposedHeaders(Arrays.asList("Authorization", "access-token", "refresh-token"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "access-token", "refresh-token",
+                "X-Cache", "X-Cache-Source", "X-Cache-TTL", "X-Response-Time"
+        ));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

@@ -11,6 +11,8 @@ import ma.bank.ticketmanagementsystembackend.entities.ClientStatus;
 import ma.bank.ticketmanagementsystembackend.mappers.ClientMapper;
 import ma.bank.ticketmanagementsystembackend.repositories.ClientRepository;
 import ma.bank.ticketmanagementsystembackend.repositories.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "clients", allEntries = true)
     public ClientDTO createClient(Client client) {
         client.setStatus(ClientStatus.ACTIVE);
         client.setCreatedAt(LocalDateTime.now());
@@ -35,6 +38,7 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "clients", allEntries = true)
     public ClientDTO updateClient(Long id, Client client) {
         Client updatedClient = findClientById(id);
 
@@ -47,11 +51,13 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
+    @Cacheable(value = "clients", key = "#id")
     public ClientDTO getClientById(Long id) {
         return clientMapper.toDTO(findClientById(id));
     }
 
     @Override
+    @Cacheable(value = "clients", key = "'all'")
     public List<ClientDTO> getAllClients() {
         return clientRepository.findAll()
                 .stream()
@@ -69,6 +75,7 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "clients", allEntries = true)
     public ClientDTO suspendClient(Long id, String reason, String adminEmail) {
         Client client = findClientById(id);
 
@@ -89,6 +96,7 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "clients", allEntries = true)
     public ClientDTO reactivateClient(Long id) {
         Client client = findClientById(id);
 

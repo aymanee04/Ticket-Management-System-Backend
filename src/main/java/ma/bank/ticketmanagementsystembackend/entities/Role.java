@@ -1,5 +1,7 @@
 package ma.bank.ticketmanagementsystembackend.entities;
 
-public enum Role {
+import java.io.Serializable;
+
+public enum Role implements Serializable {
     USER,ADMIN,MANAGER
 }

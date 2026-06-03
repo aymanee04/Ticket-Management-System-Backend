@@ -1,6 +1,8 @@
 package ma.bank.ticketmanagementsystembackend.entities;
 
-public enum TicketStatus {
+import java.io.Serializable;
+
+public enum TicketStatus implements Serializable {
     IN_PROGRESS,
     VALIDATED,
     REJECTED,

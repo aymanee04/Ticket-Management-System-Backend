@@ -1,9 +1,10 @@
 package ma.bank.ticketmanagementsystembackend.dtos.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import ma.bank.ticketmanagementsystembackend.entities.TicketStatus;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -12,7 +13,9 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TicketDTO {
+public class TicketDTO implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     private Long ticketId;
     private String title;
     private String description;

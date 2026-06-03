@@ -3,6 +3,8 @@ package ma.bank.ticketmanagementsystembackend.dtos.dto;
 import lombok.*;
 import ma.bank.ticketmanagementsystembackend.entities.ClientStatus;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -10,7 +12,9 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ClientDTO {
+public class ClientDTO implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     private Long clientId;
     private String name;
     private String email;

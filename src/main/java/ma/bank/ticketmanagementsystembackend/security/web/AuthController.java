@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import ma.bank.ticketmanagementsystembackend.entities.AppUser;
 import ma.bank.ticketmanagementsystembackend.entities.ClientStatus;
 import ma.bank.ticketmanagementsystembackend.security.JwtUtils;
+import ma.bank.ticketmanagementsystembackend.services.TokenBlacklistService;
 import ma.bank.ticketmanagementsystembackend.services.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.DisabledException;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 public class AuthController {
 
     private final UserService userService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @GetMapping("/refreshToken")
     public void refreshToken(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -84,6 +86,31 @@ public class AuthController {
         } else {
             throw new RuntimeException("Refresh token is missing");
         }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, String>> logout(HttpServletRequest request) {
+
+        String header = request.getHeader(JwtUtils.AUTH_HEADER);
+        if (header == null || !header.startsWith(JwtUtils.PREFIX)) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "No token provided"));
+        }
+
+        String token = header.substring(JwtUtils.PREFIX.length());
+
+        // Decode to get remaining TTL
+        DecodedJWT decoded = JWT.require(Algorithm.HMAC256(JwtUtils.SECRET))
+                .build()
+                .verify(token);
+
+        long remainingTtl = decoded.getExpiresAt().getTime() - System.currentTimeMillis();
+
+        if (remainingTtl > 0) {
+            tokenBlacklistService.blacklist(token, remainingTtl);
+        }
+
+        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 
 }

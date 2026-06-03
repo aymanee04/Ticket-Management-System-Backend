@@ -9,6 +9,8 @@ import ma.bank.ticketmanagementsystembackend.mappers.TicketMapper;
 import ma.bank.ticketmanagementsystembackend.repositories.ClientRepository;
 import ma.bank.ticketmanagementsystembackend.repositories.TicketRepository;
 import ma.bank.ticketmanagementsystembackend.repositories.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -104,6 +106,7 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "tickets", key = "#ticketId")
     public TicketDTO assignTicket(Long ticketId, Long assignedToId) {
         Ticket ticket = findTicketById(ticketId);
         AppUser assignee = findUserById(assignedToId, "Assignee not found");
@@ -127,6 +130,7 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "tickets", key = "#ticketId")
     public TicketDTO approveTicket(Long ticketId, Long managerId, String comment) {
         Ticket ticket = findTicketById(ticketId);
         AppUser manager = findUserById(managerId, "Manager not found");
@@ -146,6 +150,7 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "tickets", key = "#ticketId")
     public TicketDTO rejectTicket(Long ticketId, Long managerId, String comment) {
         Ticket ticket = findTicketById(ticketId);
         AppUser manager = findUserById(managerId, "Manager not found");
@@ -164,6 +169,7 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "tickets", key = "#ticketId")
     public TicketDTO archiveTicket(Long ticketId) {
         Ticket ticket = findTicketById(ticketId);
         if (ticket.getStatus() != TicketStatus.VALIDATED &&
@@ -178,6 +184,7 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "tickets", key = "#ticketId")
     public TicketDTO cancelTicket(Long ticketId) {
         Ticket ticket = findTicketById(ticketId);
         requireValidatableStatus(ticket, "cancelled");
@@ -206,6 +213,7 @@ public class TicketServiceImpl implements TicketService {
     //  Read
 ///
     @Override
+    @Cacheable(value = "tickets", key = "#id")
     public TicketDTO getTicketById(Long id, AppUser currentUser) {
         Ticket ticket = findTicketById(id);
         Collection<Role> roles = currentUser.getRoles();
