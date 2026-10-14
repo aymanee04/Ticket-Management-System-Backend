@@ -74,6 +74,7 @@ class TicketServiceImplTest {
         appUser = AppUser.builder()
                 .userId(1L)
                 .client(client1)
+                .roles(Set.of(Role.USER))
                 .build();
 
         ticket = Ticket.builder()
@@ -318,15 +319,35 @@ class TicketServiceImplTest {
 
             TicketDTO result = ticketService.assignTicket(1L,1L);
             assertNotNull(result);
-
-            ticket.setAssignedTo(appUser);
-            ticket.setUpdatedAt(LocalDateTime.now());
-
-            Ticket assignedTicket = ticketRepository.save(ticket);
+            assertEquals(appUser, ticket.getAssignedTo());
+            assertNotNull(ticket.getUpdatedAt());
 
             verify(ticketRepository).findById(1L);
-            verify(emailService).sendTicketAssignedEmail(assignedTicket,appUser);
+            verify(ticketRepository).save(ticket);
+            verify(emailService).sendTicketAssignedEmail(ticket,appUser);
             verify(ticketMapper).toDTO(ticket);
+        }
+
+        @Test
+        @DisplayName("Should assign ticket to admin even when client differs")
+        void shouldAssignTicketToAdminEvenWhenClientDiffers(){
+            AppUser admin = AppUser.builder()
+                    .userId(2L)
+                    .client(client2)
+                    .roles(Set.of(Role.ADMIN))
+                    .build();
+
+            ticket.setStatus(TicketStatus.IN_PROGRESS);
+            when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
+            when(userRepository.findById(2L)).thenReturn(Optional.of(admin));
+            when(ticketRepository.save(any(Ticket.class))).thenReturn(ticket);
+            when(ticketMapper.toDTO(any(Ticket.class))).thenReturn(ticketDTO);
+
+            TicketDTO result = ticketService.assignTicket(1L,2L);
+
+            assertNotNull(result);
+            assertEquals(admin, ticket.getAssignedTo());
+            verify(emailService).sendTicketAssignedEmail(ticket, admin);
         }
 
         @Test

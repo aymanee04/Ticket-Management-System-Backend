@@ -4,6 +4,8 @@ import ma.bank.ticketmanagementsystembackend.dtos.dto.AppUserDTO;
 import ma.bank.ticketmanagementsystembackend.entities.AppUser;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+
 @Component
 public class AppUserMapper {
 
@@ -17,7 +19,7 @@ public class AppUserMapper {
                 .name(user.getName())
                 .jobTitle(user.getJobTitle())
                 .email(user.getEmail())
-                .roles(user.getRoles())
+                .roles(user.getRoles() != null ? new ArrayList<>(user.getRoles()) : new ArrayList<>())
                 .clientId(user.getClient() != null ? user.getClient().getClientId() : null)
                 .clientName(user.getClient() != null ? user.getClient().getName() : null)
                 .build();
@@ -33,7 +35,7 @@ public class AppUserMapper {
                 .name(dto.getName())
                 .jobTitle(dto.getJobTitle())
                 .email(dto.getEmail())
-                .roles(dto.getRoles())
+                .roles(dto.getRoles() != null ? new ArrayList<>(dto.getRoles()) : new ArrayList<>())
                 .build();
     }
 }

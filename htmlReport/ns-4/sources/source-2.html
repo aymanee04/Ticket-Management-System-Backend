@@ -1,0 +1,193 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > ClientController</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">ma.bank.ticketmanagementsystembackend.controllers</a>
+</div>
+
+<h1>Coverage Summary for Class: ClientController (ma.bank.ticketmanagementsystembackend.controllers)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">ClientController</td>
+<td class="coverageStat">
+  <span class="percent">
+    14.3%
+  </span>
+  <span class="absValue">
+    (1/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    21.4%
+  </span>
+  <span class="absValue">
+    (3/14)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">ClientController$$SpringCGLIB$$0</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    14.3%
+  </span>
+  <span class="absValue">
+    (1/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    21.4%
+  </span>
+  <span class="absValue">
+    (3/14)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package ma.bank.ticketmanagementsystembackend.controllers;
+&nbsp;
+&nbsp;import jakarta.validation.Valid;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import ma.bank.ticketmanagementsystembackend.dtos.SuspendRequest;
+&nbsp;import ma.bank.ticketmanagementsystembackend.dtos.dto.ClientDTO;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.Client;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.ClientStatus;
+&nbsp;import ma.bank.ticketmanagementsystembackend.services.ClientService;
+&nbsp;import org.springframework.http.HttpStatus;
+&nbsp;import org.springframework.http.ResponseEntity;
+&nbsp;import org.springframework.security.access.prepost.PreAuthorize;
+&nbsp;import org.springframework.security.core.context.SecurityContextHolder;
+&nbsp;import org.springframework.web.bind.annotation.*;
+&nbsp;
+&nbsp;import java.util.List;
+&nbsp;
+&nbsp;@RestController
+&nbsp;@RequestMapping(&quot;/api/clients&quot;)
+&nbsp;@RequiredArgsConstructor
+&nbsp;public class ClientController {
+&nbsp;
+&nbsp;    private final ClientService clientService;
+&nbsp;
+&nbsp;    @PostMapping
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;ADMIN&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;ClientDTO&gt; createClient(@RequestBody Client client) {
+<b class="fc">&nbsp;        return ResponseEntity</b>
+<b class="fc">&nbsp;                .status(HttpStatus.CREATED)</b>
+<b class="fc">&nbsp;                .body(clientService.createClient(client));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PutMapping(&quot;/{id}&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;ADMIN&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;ClientDTO&gt; updateClient(
+&nbsp;            @PathVariable Long id,
+&nbsp;            @RequestBody Client client) {
+<b class="nc">&nbsp;        return ResponseEntity.ok(clientService.updateClient(id, client));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(&quot;/{id}&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;ADMIN&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;ClientDTO&gt; getClient(@PathVariable Long id) {
+<b class="nc">&nbsp;        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();</b>
+<b class="nc">&nbsp;        return ResponseEntity.ok(clientService.getClientById(id));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping
+&nbsp;    @PreAuthorize(&quot;hasAnyAuthority(&#39;ADMIN&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;List&lt;ClientDTO&gt;&gt; getAllClients() {
+<b class="nc">&nbsp;        return ResponseEntity.ok(clientService.getAllClients());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(&quot;/status/{status}&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;ADMIN&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;List&lt;ClientDTO&gt;&gt; getClientsByStatus(@PathVariable ClientStatus status) {
+<b class="nc">&nbsp;        return ResponseEntity.ok(clientService.getClientsByStatus(status));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PutMapping(&quot;/{id}/suspend&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;ADMIN&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;ClientDTO&gt; suspendClient(
+&nbsp;            @PathVariable Long id,
+&nbsp;            @RequestBody @Valid SuspendRequest request) {
+&nbsp;
+<b class="nc">&nbsp;        String adminEmail = SecurityContextHolder.getContext()</b>
+<b class="nc">&nbsp;                .getAuthentication()</b>
+<b class="nc">&nbsp;                .getName();</b>
+&nbsp;
+<b class="nc">&nbsp;        return ResponseEntity.ok(</b>
+<b class="nc">&nbsp;                clientService.suspendClient(id, request.suspensionReason(), adminEmail));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PutMapping(&quot;/{id}/reactivate&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;ADMIN&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;ClientDTO&gt; reactivateClient(@PathVariable Long id) {
+<b class="nc">&nbsp;        return ResponseEntity.ok(clientService.reactivateClient(id));</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-09-30 23:41</div>
+</div>
+</body>
+</html>

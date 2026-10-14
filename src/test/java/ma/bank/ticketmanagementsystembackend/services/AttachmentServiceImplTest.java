@@ -6,9 +6,12 @@ import ma.bank.ticketmanagementsystembackend.dtos.dto.AttachmentDTO;
 import ma.bank.ticketmanagementsystembackend.entities.AppUser;
 import ma.bank.ticketmanagementsystembackend.entities.Attachment;
 import ma.bank.ticketmanagementsystembackend.entities.Ticket;
+import ma.bank.ticketmanagementsystembackend.entities.Role;
 import ma.bank.ticketmanagementsystembackend.mappers.AttachmentMapper;
 import ma.bank.ticketmanagementsystembackend.repositories.AttachmentRepository;
 import ma.bank.ticketmanagementsystembackend.repositories.TicketRepository;
+import ma.bank.ticketmanagementsystembackend.exceptions.BusinessException;
+import ma.bank.ticketmanagementsystembackend.repositories.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -24,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -37,6 +42,8 @@ class AttachmentServiceImplTest {
     private TicketRepository ticketRepository;
     @Mock
     private CloudinaryService cloudinaryService;
+    @Mock
+    private UserRepository userRepository;
     @Mock
     private Cloudinary cloudinary;
     @Mock
@@ -54,6 +61,12 @@ class AttachmentServiceImplTest {
 
         ticket = new Ticket();
         ticket.setTicketId(1L);
+
+        appUser = new AppUser();
+        appUser.setUserId(99L);
+        appUser.setEmail("owner@bank.ma");
+        appUser.setRoles(Set.of(Role.USER));
+        ticket.setCreatedBy(appUser);
 
         attachment = Attachment.builder()
                 .attachmentId(1L)
@@ -76,11 +89,17 @@ class AttachmentServiceImplTest {
         @Test
         void shouldUploadAttachmentSuccessfully() throws IOException {
 
-            MultipartFile file = mock(MultipartFile.class);
-
-            when(file.getOriginalFilename()).thenReturn("file.txt");
-            when(file.getContentType()).thenReturn("text/plain");
-            when(file.getSize()).thenReturn(100L);
+            MultipartFile file = new MockMultipartFile(
+                    "file",
+                    "file.png",
+                    "image/png",
+                    new byte[]{
+                            (byte) 0x89, 0x50, 0x4E, 0x47,
+                            0x0D, 0x0A, 0x1A, 0x0A,
+                            0x00, 0x00, 0x00, 0x0D,
+                            0x49, 0x48, 0x44, 0x52
+                    }
+            );
 
             when(ticketRepository.findById(1L)).thenReturn(Optional.of(ticket));
 
@@ -96,6 +115,7 @@ class AttachmentServiceImplTest {
                     uploadAttachment(1L, file);
 
             assertNotNull(result);
+            assertEquals(1L, result.getAttachmentId());
 
             verify(cloudinaryService).uploadFile(file);
             verify(attachmentRepository).save(any());
@@ -143,11 +163,32 @@ class AttachmentServiceImplTest {
         void shouldDeleteAttachment() throws IOException {
 
             when(attachmentRepository.findById(1L)).thenReturn(Optional.of(attachment));
+            when(userRepository.findByEmail("owner@bank.ma")).thenReturn(Optional.of(appUser));
 
             attachmentService.deleteAttachment(1L,appUser);
 
             verify(cloudinaryService).deleteFile("publicId");
             verify(attachmentRepository).delete(attachment);
+        }
+
+        @DisplayName("Should throw exception when user cannot delete attachment")
+        @Test
+        void shouldThrowExceptionWhenUserIsNotAllowed() throws IOException {
+
+            AppUser otherUser = new AppUser();
+            otherUser.setEmail("other@bank.ma");
+            otherUser.setRoles(Set.of(Role.USER));
+
+            when(attachmentRepository.findById(1L)).thenReturn(Optional.of(attachment));
+            when(userRepository.findByEmail("other@bank.ma")).thenReturn(Optional.of(otherUser));
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> {
+                attachmentService.deleteAttachment(1L, otherUser);
+            });
+
+            assertEquals("You don't have permission to delete this attachment", ex.getMessage());
+            verify(attachmentRepository, never()).delete(any());
+            verify(cloudinaryService, never()).deleteFile(any());
         }
 
         @DisplayName("Should throw exception when attachment not found")

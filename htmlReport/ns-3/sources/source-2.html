@@ -1,0 +1,193 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > CacheHeaderFilter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">ma.bank.ticketmanagementsystembackend.config</a>
+</div>
+
+<h1>Coverage Summary for Class: CacheHeaderFilter (ma.bank.ticketmanagementsystembackend.config)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">CacheHeaderFilter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    33.3%
+  </span>
+  <span class="absValue">
+    (1/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/32)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    6.7%
+  </span>
+  <span class="absValue">
+    (2/30)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package ma.bank.ticketmanagementsystembackend.config;
+&nbsp;
+&nbsp;import jakarta.servlet.FilterChain;
+&nbsp;import jakarta.servlet.ServletException;
+&nbsp;import jakarta.servlet.http.HttpServletRequest;
+&nbsp;import jakarta.servlet.http.HttpServletResponse;
+&nbsp;import org.springframework.core.Ordered;
+&nbsp;import org.springframework.core.annotation.Order;
+&nbsp;import org.springframework.data.redis.core.RedisTemplate;
+&nbsp;import org.springframework.stereotype.Component;
+&nbsp;import org.springframework.web.filter.OncePerRequestFilter;
+&nbsp;
+&nbsp;import java.io.IOException;
+&nbsp;import java.util.concurrent.TimeUnit;
+&nbsp;
+&nbsp;@Component
+&nbsp;@Order(Ordered.HIGHEST_PRECEDENCE)
+&nbsp;public class CacheHeaderFilter extends OncePerRequestFilter {
+&nbsp;
+&nbsp;    private final RedisTemplate&lt;String, String&gt; redisTemplate;
+&nbsp;
+<b class="fc">&nbsp;    public CacheHeaderFilter(RedisTemplate&lt;String, String&gt; redisTemplate) {</b>
+<b class="fc">&nbsp;        this.redisTemplate = redisTemplate;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    protected void doFilterInternal(HttpServletRequest request,
+&nbsp;                                    HttpServletResponse response,
+&nbsp;                                    FilterChain chain)
+&nbsp;            throws ServletException, IOException {
+&nbsp;
+&nbsp;        // Check cache BEFORE processing the request
+<b class="nc">&nbsp;        String cacheKey = resolveCacheKey(request.getRequestURI());</b>
+<b class="nc">&nbsp;        boolean isCacheHit = false;</b>
+<b class="nc">&nbsp;        long ttl = 0;</b>
+&nbsp;
+<b class="nc">&nbsp;        if (request.getMethod().equals(&quot;GET&quot;) &amp;&amp; cacheKey != null) {</b>
+&nbsp;            try {
+<b class="nc">&nbsp;                isCacheHit = Boolean.TRUE.equals(redisTemplate.hasKey(cacheKey));</b>
+<b class="nc">&nbsp;                if (isCacheHit) {</b>
+<b class="nc">&nbsp;                    Long ttlValue = redisTemplate.getExpire(cacheKey, TimeUnit.SECONDS);</b>
+<b class="nc">&nbsp;                    ttl = (ttlValue != null &amp;&amp; ttlValue &gt; 0) ? ttlValue : 0;</b>
+&nbsp;                }
+&nbsp;            } catch (Exception e) {
+<b class="nc">&nbsp;                System.err.println(&quot;Cache check error: &quot; + e.getMessage());</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        // Add headers BEFORE the response is committed
+<b class="nc">&nbsp;        if (request.getMethod().equals(&quot;GET&quot;) &amp;&amp; cacheKey != null) {</b>
+<b class="nc">&nbsp;            response.setHeader(&quot;X-Cache&quot;, isCacheHit ? &quot;HIT&quot; : &quot;MISS&quot;);</b>
+<b class="nc">&nbsp;            response.setHeader(&quot;X-Cache-Source&quot;, isCacheHit ? &quot;REDIS&quot; : &quot;DATABASE&quot;);</b>
+<b class="nc">&nbsp;            if (isCacheHit &amp;&amp; ttl &gt; 0) {</b>
+<b class="nc">&nbsp;                response.setHeader(&quot;X-Cache-TTL&quot;, ttl + &quot;s remaining&quot;);</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        long start = System.currentTimeMillis();</b>
+<b class="nc">&nbsp;        chain.doFilter(request, response);</b>
+<b class="nc">&nbsp;        long elapsed = System.currentTimeMillis() - start;</b>
+&nbsp;
+<b class="nc">&nbsp;        response.setHeader(&quot;X-Response-Time&quot;, elapsed + &quot;ms&quot;);</b>
+<b class="nc">&nbsp;        System.out.println(&quot;Cache check for key: &quot; + cacheKey + &quot; → &quot; + (isCacheHit ? &quot;HIT&quot; : &quot;MISS&quot;));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private String resolveCacheKey(String uri) {
+<b class="nc">&nbsp;        if (uri.matches(&quot;/api/users/\\d+&quot;))</b>
+<b class="nc">&nbsp;            return &quot;users::&quot; + uri.replaceAll(&quot;\\D+&quot;, &quot;&quot;);</b>
+<b class="nc">&nbsp;        if (uri.matches(&quot;/api/clients/\\d+&quot;))</b>
+<b class="nc">&nbsp;            return &quot;clients::&quot; + uri.replaceAll(&quot;\\D+&quot;, &quot;&quot;);</b>
+<b class="nc">&nbsp;        if (uri.matches(&quot;/api/tickets/\\d+&quot;))</b>
+<b class="nc">&nbsp;            return &quot;tickets::&quot; + uri.replaceAll(&quot;\\D+&quot;, &quot;&quot;);</b>
+<b class="nc">&nbsp;        if (uri.equals(&quot;/api/clients&quot;))</b>
+<b class="nc">&nbsp;            return &quot;clients::all&quot;;</b>
+<b class="nc">&nbsp;        return null;</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-09-30 23:41</div>
+</div>
+</body>
+</html>

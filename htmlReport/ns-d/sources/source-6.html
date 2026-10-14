@@ -1,0 +1,372 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > UserServiceImpl</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">ma.bank.ticketmanagementsystembackend.services</a>
+</div>
+
+<h1>Coverage Summary for Class: UserServiceImpl (ma.bank.ticketmanagementsystembackend.services)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">UserServiceImpl</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    40%
+  </span>
+  <span class="absValue">
+    (8/20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    55.9%
+  </span>
+  <span class="absValue">
+    (19/34)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    58.2%
+  </span>
+  <span class="absValue">
+    (53/91)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package ma.bank.ticketmanagementsystembackend.services;
+&nbsp;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import ma.bank.ticketmanagementsystembackend.dtos.CreateUserRequest;
+&nbsp;import ma.bank.ticketmanagementsystembackend.dtos.PagedResponse;
+&nbsp;import ma.bank.ticketmanagementsystembackend.dtos.UpdateUserRequest;
+&nbsp;import ma.bank.ticketmanagementsystembackend.dtos.dto.AppUserDTO;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.AppUser;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.Client;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.Role;
+&nbsp;import ma.bank.ticketmanagementsystembackend.exceptions.BusinessException;
+&nbsp;import ma.bank.ticketmanagementsystembackend.exceptions.DuplicateResourceException;
+&nbsp;import ma.bank.ticketmanagementsystembackend.exceptions.InvalidPasswordException;
+&nbsp;import ma.bank.ticketmanagementsystembackend.exceptions.ResourceNotFoundException;
+&nbsp;import ma.bank.ticketmanagementsystembackend.mappers.AppUserMapper;
+&nbsp;import ma.bank.ticketmanagementsystembackend.repositories.ClientRepository;
+&nbsp;import ma.bank.ticketmanagementsystembackend.repositories.UserRepository;
+&nbsp;import org.springframework.cache.annotation.CacheEvict;
+&nbsp;import org.springframework.cache.annotation.Cacheable;
+&nbsp;import org.springframework.data.domain.Page;
+&nbsp;import org.springframework.data.domain.PageRequest;
+&nbsp;import org.springframework.data.domain.Pageable;
+&nbsp;import org.springframework.data.domain.Sort;
+&nbsp;import org.springframework.security.crypto.password.PasswordEncoder;
+&nbsp;import org.springframework.stereotype.Service;
+&nbsp;import org.springframework.transaction.annotation.Transactional;
+&nbsp;
+&nbsp;import java.util.ArrayList;
+&nbsp;import java.util.List;
+&nbsp;
+&nbsp;@Service
+&nbsp;@RequiredArgsConstructor
+&nbsp;public class UserServiceImpl implements UserService {
+&nbsp;
+&nbsp;    private final UserRepository userRepository;
+&nbsp;    private final ClientRepository clientRepository;
+&nbsp;    private final AppUserMapper appUserMapper;
+&nbsp;    private final EmailService emailService;
+&nbsp;    private final PasswordEncoder passwordEncoder;
+&nbsp;
+&nbsp;
+&nbsp;    @Override
+&nbsp;    @Transactional
+&nbsp;    @CacheEvict(value = &quot;users&quot;, allEntries = true)
+&nbsp;    public AppUserDTO createUser(CreateUserRequest request) {
+<b class="fc">&nbsp;        if (userRepository.existsByEmail(request.getEmail())) {</b>
+<b class="fc">&nbsp;            throw new DuplicateResourceException(&quot;Email already exists&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        Client client = null;</b>
+<b class="fc">&nbsp;        if (request.getClientId() != null) {</b>
+<b class="fc">&nbsp;            client = clientRepository.findById(request.getClientId())</b>
+<b class="fc">&nbsp;                    .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Client not found&quot;));</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        List&lt;Role&gt; roles = (request.getRoles() != null &amp;&amp; !request.getRoles().isEmpty())</b>
+<b class="fc">&nbsp;                ? new ArrayList&lt;&gt;(request.getRoles())</b>
+<b class="fc">&nbsp;                : new ArrayList&lt;&gt;(List.of(Role.USER));</b>
+&nbsp;
+<b class="fc">&nbsp;        if (!roles.contains(Role.USER)) {</b>
+<b class="fc">&nbsp;            roles.add(Role.USER);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        AppUser user = AppUser.builder()</b>
+<b class="fc">&nbsp;                .name(request.getName())</b>
+<b class="fc">&nbsp;                .email(request.getEmail())</b>
+<b class="fc">&nbsp;                .jobTitle(request.getJobTitle())</b>
+<b class="fc">&nbsp;                .password(request.getPassword())</b>
+<b class="fc">&nbsp;                .roles(roles)</b>
+<b class="fc">&nbsp;                .client(client)</b>
+<b class="fc">&nbsp;                .build();</b>
+&nbsp;
+<b class="fc">&nbsp;        emailService.sendWelcomeEmail(user, user.getPassword());</b>
+<b class="fc">&nbsp;        user.setPassword(passwordEncoder.encode(user.getPassword()));</b>
+&nbsp;
+<b class="fc">&nbsp;        return appUserMapper.toDTO(userRepository.save(user));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    @Transactional
+&nbsp;    @CacheEvict(value = &quot;users&quot;, allEntries = true)
+&nbsp;    public AppUserDTO updateUser(Long id, UpdateUserRequest request) {
+<b class="fc">&nbsp;        AppUser user = findUserById(id);</b>
+<b class="fc">&nbsp;        user.setName(request.getName());</b>
+<b class="fc">&nbsp;        user.setEmail(request.getEmail());</b>
+<b class="fc">&nbsp;        user.setJobTitle(request.getJobTitle());</b>
+<b class="fc">&nbsp;        return appUserMapper.toDTO(userRepository.save(user));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    @Transactional
+&nbsp;    @CacheEvict(value = &quot;users&quot;, allEntries = true)
+&nbsp;    public void changePassword(Long userId, String currentPassword, String newPassword) {
+<b class="fc">&nbsp;        AppUser user = findUserById(userId);</b>
+&nbsp;
+<b class="fc">&nbsp;        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {</b>
+<b class="fc">&nbsp;            throw new InvalidPasswordException(&quot;Current password is incorrect&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (passwordEncoder.matches(newPassword, user.getPassword())) {</b>
+<b class="fc">&nbsp;            throw new InvalidPasswordException(&quot;New password must be different from current password&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (newPassword.length() &lt; 6) {</b>
+<b class="fc">&nbsp;            throw new InvalidPasswordException(&quot;New password must be at least 6 characters&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        user.setPassword(passwordEncoder.encode(newPassword));</b>
+<b class="fc">&nbsp;        userRepository.save(user);</b>
+<b class="fc">&nbsp;        emailService.sendPasswordChangedEmail(user);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public void addRoleToUser(String name, String roleName) {
+<b class="fc">&nbsp;        AppUser user = userRepository.findByName(name);</b>
+<b class="fc">&nbsp;        if (user == null) {</b>
+<b class="fc">&nbsp;            throw new ResourceNotFoundException(&quot;User not found&quot;);</b>
+&nbsp;        }
+&nbsp;        try {
+<b class="fc">&nbsp;            Role role = Role.valueOf(roleName.toUpperCase());</b>
+<b class="fc">&nbsp;            if (!user.getRoles().contains(role)) {</b>
+<b class="fc">&nbsp;                user.getRoles().add(role);</b>
+<b class="fc">&nbsp;                userRepository.save(user);</b>
+&nbsp;            }
+&nbsp;        } catch (IllegalArgumentException e) {
+<b class="fc">&nbsp;            throw new BusinessException(&quot;Role &quot; + roleName + &quot; does not exist&quot;);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    @Cacheable(value = &quot;users&quot;, key = &quot;#id&quot;)
+&nbsp;    public AppUserDTO getUserById(long id) {
+<b class="fc">&nbsp;        return appUserMapper.toDTO(findUserById(id));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public List&lt;AppUserDTO&gt; getUserByClientName(String clientName) {
+<b class="nc">&nbsp;        return userRepository.findByClient_Name(clientName)</b>
+<b class="nc">&nbsp;                .stream().map(appUserMapper::toDTO).toList();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    @Cacheable(value = &quot;users&quot;, key = &quot;&#39;client:&#39; + #id&quot;)
+&nbsp;    public List&lt;AppUserDTO&gt; getUserByClientId(Long id) {
+<b class="nc">&nbsp;        return userRepository.findByClient_ClientId(id)</b>
+<b class="nc">&nbsp;                .stream().map(appUserMapper::toDTO).toList();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public List&lt;AppUserDTO&gt; getAllUsers() {
+<b class="fc">&nbsp;        return userRepository.findAll()</b>
+<b class="fc">&nbsp;                .stream().map(appUserMapper::toDTO).toList();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    @Transactional
+&nbsp;    public AppUser loadUserByEmail(String email) {
+<b class="fc">&nbsp;        AppUser user =  userRepository.findByEmail(email)</b>
+<b class="fc">&nbsp;                .orElseThrow(() -&gt; new ResourceNotFoundException(</b>
+&nbsp;                        &quot;User not found with this email: &quot; + email));
+<b class="fc">&nbsp;        return user;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    @Cacheable(value = &quot;users&quot;, key = &quot;&#39;email:&#39; + #email&quot;)
+&nbsp;    public AppUserDTO getUserByEmail(String email) {
+<b class="nc">&nbsp;        return appUserMapper.toDTO(loadUserByEmail(email));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public Page&lt;AppUserDTO&gt; getAllUsersWithPagination(Pageable pageable) {
+<b class="nc">&nbsp;        return userRepository.findAll(pageable).map(appUserMapper::toDTO);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public Page&lt;AppUserDTO&gt; getUsersByClientIdWithPagination(Long id, Pageable pageable) {
+<b class="nc">&nbsp;        return userRepository.findByClient_ClientId(id, pageable).map(appUserMapper::toDTO);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public Page&lt;AppUserDTO&gt; getUserByIdWithPagination(Long id, Pageable pageable) {
+<b class="nc">&nbsp;        return userRepository.findByUserId(id, pageable).map(appUserMapper::toDTO);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public Page&lt;AppUserDTO&gt; searchUsersWithPagination(String searchTerm, Pageable pageable) {
+<b class="nc">&nbsp;        return userRepository.searchUsers(searchTerm, pageable).map(appUserMapper::toDTO);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public Page&lt;AppUserDTO&gt; searchUsersByClient(String searchTerm, Long clientId, Pageable pageable) {
+<b class="nc">&nbsp;        return userRepository.searchUsersByClient(searchTerm, clientId, pageable)</b>
+<b class="nc">&nbsp;                .map(appUserMapper::toDTO);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public PagedResponse&lt;AppUserDTO&gt; getUsersPagedForCurrentUser(
+&nbsp;            String email, int page, int size, String sortBy, String direction) {
+&nbsp;
+<b class="nc">&nbsp;        Pageable pageable = buildPageable(page, size, sortBy, direction);</b>
+<b class="nc">&nbsp;        AppUser currentUser = loadUserByEmail(email);</b>
+&nbsp;
+&nbsp;        Page&lt;AppUserDTO&gt; result;
+<b class="nc">&nbsp;        if (currentUser.getRoles().contains(Role.ADMIN)) {</b>
+<b class="nc">&nbsp;            result = getAllUsersWithPagination(pageable);</b>
+<b class="nc">&nbsp;        } else if (currentUser.getRoles().contains(Role.MANAGER)) {</b>
+<b class="nc">&nbsp;            result = currentUser.getClient() != null</b>
+<b class="nc">&nbsp;                    ? getUsersByClientIdWithPagination(currentUser.getClient().getClientId(), pageable)</b>
+<b class="nc">&nbsp;                    : Page.empty(pageable);</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            result = getUserByIdWithPagination(currentUser.getUserId(), pageable);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return toPagedResponse(result);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public PagedResponse&lt;AppUserDTO&gt; searchUsersPagedForCurrentUser(
+&nbsp;            String email, String searchTerm, int page, int size) {
+&nbsp;
+<b class="nc">&nbsp;        Pageable pageable = PageRequest.of(page, size);</b>
+<b class="nc">&nbsp;        AppUser currentUser = loadUserByEmail(email);</b>
+&nbsp;
+&nbsp;        Page&lt;AppUserDTO&gt; result;
+<b class="nc">&nbsp;        if (currentUser.getRoles().contains(Role.ADMIN)) {</b>
+<b class="nc">&nbsp;            result = searchUsersWithPagination(searchTerm, pageable);</b>
+<b class="nc">&nbsp;        } else if (currentUser.getRoles().contains(Role.MANAGER)) {</b>
+<b class="nc">&nbsp;            result = currentUser.getClient() != null</b>
+<b class="nc">&nbsp;                    ? searchUsersByClient(searchTerm, currentUser.getClient().getClientId(), pageable)</b>
+<b class="nc">&nbsp;                    : Page.empty(pageable);</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            result = Page.empty(pageable);</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return toPagedResponse(result);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private AppUser findUserById(Long id) {
+<b class="fc">&nbsp;        return userRepository.findById(id)</b>
+<b class="fc">&nbsp;                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found&quot;));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private Pageable buildPageable(int page, int size, String sortBy, String direction) {
+<b class="nc">&nbsp;        Sort.Direction sortDirection = direction.equalsIgnoreCase(&quot;asc&quot;)</b>
+<b class="nc">&nbsp;                ? Sort.Direction.ASC : Sort.Direction.DESC;</b>
+<b class="nc">&nbsp;        return PageRequest.of(page, size, Sort.by(sortDirection, sortBy));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private &lt;T&gt; PagedResponse&lt;T&gt; toPagedResponse(Page&lt;T&gt; p) {
+<b class="nc">&nbsp;        return new PagedResponse&lt;&gt;(</b>
+<b class="nc">&nbsp;                p.getContent(), p.getNumber(), p.getSize(),</b>
+<b class="nc">&nbsp;                p.getTotalElements(), p.getTotalPages(),</b>
+<b class="nc">&nbsp;                p.isLast(), p.isFirst()</b>
+&nbsp;        );
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-09-30 23:41</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,104 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > Attachment</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">ma.bank.ticketmanagementsystembackend.entities</a>
+</div>
+
+<h1>Coverage Summary for Class: Attachment (ma.bank.ticketmanagementsystembackend.entities)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">Attachment</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package ma.bank.ticketmanagementsystembackend.entities;
+&nbsp;
+&nbsp;import com.fasterxml.jackson.annotation.JsonProperty;
+&nbsp;import jakarta.persistence.*;
+&nbsp;import lombok.*;
+&nbsp;
+&nbsp;import java.time.LocalDateTime;
+&nbsp;
+&nbsp;@Entity
+&nbsp;@Table(name = &quot;attachments&quot;)
+&nbsp;@Data
+&nbsp;@Builder
+&nbsp;@AllArgsConstructor
+&nbsp;@NoArgsConstructor
+&nbsp;@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+&nbsp;@ToString(exclude = &quot;ticket&quot;)
+&nbsp;public class Attachment {
+&nbsp;    @Id
+&nbsp;    @GeneratedValue(strategy = GenerationType.IDENTITY)
+&nbsp;    @EqualsAndHashCode.Include
+&nbsp;    private Long attachmentId;
+&nbsp;
+&nbsp;    private String fileName;
+&nbsp;    private String fileType;
+&nbsp;    private Long fileSize;
+&nbsp;
+&nbsp;    private String cloudinaryUrl;
+&nbsp;    private String cloudinaryPublicId;
+&nbsp;
+&nbsp;    private LocalDateTime uploadedAt;
+&nbsp;    @JsonProperty(access =  JsonProperty.Access.WRITE_ONLY)
+&nbsp;    @ManyToOne
+&nbsp;    @JoinColumn(name = &quot;ticketId&quot;)
+&nbsp;    private Ticket ticket;
+&nbsp;}
+&nbsp;
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-09-30 23:41</div>
+</div>
+</body>
+</html>

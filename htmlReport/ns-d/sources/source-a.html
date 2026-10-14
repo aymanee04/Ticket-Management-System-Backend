@@ -1,0 +1,110 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > UserService</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">ma.bank.ticketmanagementsystembackend.services</a>
+</div>
+
+<h1>Coverage Summary for Class: UserService (ma.bank.ticketmanagementsystembackend.services)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+</tr>
+  <tr>
+    <td class="name">UserService$MockitoMock$uJF1CMip</td>
+  </tr>
+  <tr>
+    <td class="name">UserService$MockitoMock$uJF1CMip$auxiliary$NbX8Iim5</td>
+  </tr>
+  <tr>
+    <td class="name">UserService$MockitoMock$uJF1CMip$auxiliary$qN6ienId</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package ma.bank.ticketmanagementsystembackend.services;
+&nbsp;
+&nbsp;import ma.bank.ticketmanagementsystembackend.dtos.CreateUserRequest;
+&nbsp;import ma.bank.ticketmanagementsystembackend.dtos.PagedResponse;
+&nbsp;import ma.bank.ticketmanagementsystembackend.dtos.UpdateUserRequest;
+&nbsp;import ma.bank.ticketmanagementsystembackend.dtos.dto.AppUserDTO;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.AppUser;
+&nbsp;import org.springframework.data.domain.Page;
+&nbsp;import org.springframework.data.domain.Pageable;
+&nbsp;
+&nbsp;import java.util.List;
+&nbsp;public interface UserService {
+&nbsp;    AppUserDTO createUser(CreateUserRequest request);
+&nbsp;    AppUserDTO updateUser(Long id, UpdateUserRequest request);
+&nbsp;    void changePassword(Long userId, String currentPassword, String newPassword);
+&nbsp;    void addRoleToUser(String name, String roleName);
+&nbsp;
+&nbsp;    AppUserDTO getUserById(long id);
+&nbsp;    List&lt;AppUserDTO&gt; getUserByClientName(String clientName);
+&nbsp;    List&lt;AppUserDTO&gt; getUserByClientId(Long id);
+&nbsp;    List&lt;AppUserDTO&gt; getAllUsers();
+&nbsp;    AppUser loadUserByEmail(String email);
+&nbsp;    AppUserDTO getUserByEmail(String email);
+&nbsp;
+&nbsp;    Page&lt;AppUserDTO&gt; getAllUsersWithPagination(Pageable pageable);
+&nbsp;    Page&lt;AppUserDTO&gt; getUsersByClientIdWithPagination(Long id, Pageable pageable);
+&nbsp;    Page&lt;AppUserDTO&gt; getUserByIdWithPagination(Long id, Pageable pageable);
+&nbsp;    Page&lt;AppUserDTO&gt; searchUsersWithPagination(String searchTerm, Pageable pageable);
+&nbsp;    Page&lt;AppUserDTO&gt; searchUsersByClient(String searchTerm, Long clientId, Pageable pageable);
+&nbsp;
+&nbsp;    PagedResponse&lt;AppUserDTO&gt; getUsersPagedForCurrentUser(String email, int page, int size, String sortBy, String direction);
+&nbsp;    PagedResponse&lt;AppUserDTO&gt; searchUsersPagedForCurrentUser(String email, String searchTerm, int page, int size);
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-09-30 23:41</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,702 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > TicketManagementSystemBackendApplication</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">ma.bank.ticketmanagementsystembackend</a>
+</div>
+
+<h1>Coverage Summary for Class: TicketManagementSystemBackendApplication (ma.bank.ticketmanagementsystembackend)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">TicketManagementSystemBackendApplication</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/2)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package ma.bank.ticketmanagementsystembackend;
+&nbsp;
+&nbsp;import ma.bank.ticketmanagementsystembackend.dtos.dto.AppUserDTO;
+&nbsp;import ma.bank.ticketmanagementsystembackend.dtos.dto.ClientDTO;
+&nbsp;import ma.bank.ticketmanagementsystembackend.dtos.dto.TicketDTO;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.*;
+&nbsp;import ma.bank.ticketmanagementsystembackend.services.ClientService;
+&nbsp;import ma.bank.ticketmanagementsystembackend.services.TicketService;
+&nbsp;import ma.bank.ticketmanagementsystembackend.services.UserService;
+&nbsp;import org.springframework.boot.CommandLineRunner;
+&nbsp;import org.springframework.boot.SpringApplication;
+&nbsp;import org.springframework.boot.autoconfigure.SpringBootApplication;
+&nbsp;import org.springframework.context.annotation.Bean;
+&nbsp;import org.springframework.scheduling.annotation.EnableAsync;
+&nbsp;import org.springframework.scheduling.annotation.EnableScheduling;
+&nbsp;
+&nbsp;import java.util.ArrayList;
+&nbsp;import java.util.List;
+&nbsp;
+&nbsp;@SpringBootApplication
+&nbsp;@EnableAsync
+<b class="fc">&nbsp;public class TicketManagementSystemBackendApplication {</b>
+&nbsp;
+&nbsp;    public static void main(String[] args) {
+<b class="nc">&nbsp;        SpringApplication.run(TicketManagementSystemBackendApplication.class, args);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;//    @Bean
+&nbsp;//    CommandLineRunner commandLineRunner(
+&nbsp;//            ClientService clientService,
+&nbsp;//            UserService userService,
+&nbsp;//            TicketService ticketService) {
+&nbsp;//
+&nbsp;//        return args -&gt; {
+&nbsp;//            if (userService.getAllUsers().isEmpty()) {
+&nbsp;//
+&nbsp;//                // ========== CLIENTS ==========
+&nbsp;//                ClientDTO clientA = clientService.createClient(
+&nbsp;//                        Client.builder()
+&nbsp;//                                .name(&quot;Bank of Morocco&quot;)
+&nbsp;//                                .email(&quot;contact@bankommm.com&quot;)
+&nbsp;//                                .phone(&quot;123456789&quot;)
+&nbsp;//                                .company(&quot;Bank of Morocco&quot;)
+&nbsp;//                                .status(ClientStatus.ACTIVE)
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                ClientDTO clientB = clientService.createClient(
+&nbsp;//                        Client.builder()
+&nbsp;//                                .name(&quot;Atlas Telecom&quot;)
+&nbsp;//                                .email(&quot;contact@atlasTeleccc.com&quot;)
+&nbsp;//                                .phone(&quot;987654321&quot;)
+&nbsp;//                                .company(&quot;Atlas Telecom&quot;)
+&nbsp;//                                .status(ClientStatus.ACTIVE)
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                ClientDTO clientC = clientService.createClient(
+&nbsp;//                        Client.builder()
+&nbsp;//                                .name(&quot;Binarios&quot;)
+&nbsp;//                                .email(&quot;contact@binariosss.com&quot;)
+&nbsp;//                                .phone(&quot;555666777&quot;)
+&nbsp;//                                .company(&quot;Binarios Technology&quot;)
+&nbsp;//                                .status(ClientStatus.ACTIVE)
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                ClientDTO clientD = clientService.createClient(
+&nbsp;//                        Client.builder()
+&nbsp;//                                .name(&quot;Medina Tech&quot;)
+&nbsp;//                                .email(&quot;info@medinatechhh.ma&quot;)
+&nbsp;//                                .phone(&quot;212555123456&quot;)
+&nbsp;//                                .company(&quot;Medina Tech Solutions&quot;)
+&nbsp;//                                .status(ClientStatus.ACTIVE)
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                ClientDTO clientE = clientService.createClient(
+&nbsp;//                        Client.builder()
+&nbsp;//                                .name(&quot;Sahara Logistics&quot;)
+&nbsp;//                                .email(&quot;support@saharaloggg.com&quot;)
+&nbsp;//                                .phone(&quot;212666789012&quot;)
+&nbsp;//                                .company(&quot;Sahara Logistics Co.&quot;)
+&nbsp;//                                .status(ClientStatus.ACTIVE)
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                // ========== ADMINS ==========
+&nbsp;//                AppUserDTO aymane = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Aymane Jemmaa&quot;)
+&nbsp;//                                .email(&quot;aymane@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;Senior Backend Developer&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.ADMIN)))
+&nbsp;//                                .client(null)
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                AppUserDTO adam = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Adam Tayan&quot;)
+&nbsp;//                                .email(&quot;agent@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;Database Administrator&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.ADMIN)))
+&nbsp;//                                .client(null)
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                AppUserDTO sarah = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Sarah Martinez&quot;)
+&nbsp;//                                .email(&quot;sarah@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;System Architect&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.ADMIN)))
+&nbsp;//                                .client(null)
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                // ========== MANAGERS ==========
+&nbsp;//                AppUserDTO manager1 = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Emily Stone&quot;)
+&nbsp;//                                .email(&quot;emma@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;System Administrator&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.USER, Role.MANAGER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientC.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                AppUserDTO manager2 = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Ryan Gosling&quot;)
+&nbsp;//                                .email(&quot;ryan@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;Cloud Engineer&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.MANAGER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientB.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                AppUserDTO manager3 = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Mia Goth&quot;)
+&nbsp;//                                .email(&quot;mia@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;Data Engineer&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.MANAGER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientA.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                AppUserDTO manager4 = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Omar Hassan&quot;)
+&nbsp;//                                .email(&quot;omar@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;IT Manager&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.MANAGER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientD.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                AppUserDTO manager5 = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Fatima Zahra&quot;)
+&nbsp;//                                .email(&quot;fatima@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;Operations Manager&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.MANAGER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientE.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                // ========== USERS - Bank of Morocco ==========
+&nbsp;//                AppUserDTO john = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;John Doe&quot;)
+&nbsp;//                                .email(&quot;john@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;Frontend Developer&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.USER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientA.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                AppUserDTO karim = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Karim Benzema&quot;)
+&nbsp;//                                .email(&quot;karim@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;Financial Analyst&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.USER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientA.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                AppUserDTO amina = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Amina El Mansouri&quot;)
+&nbsp;//                                .email(&quot;amina@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;Business Analyst&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.USER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientA.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                // ========== USERS - Atlas Telecom ==========
+&nbsp;//                AppUserDTO jane = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Jane Smith&quot;)
+&nbsp;//                                .email(&quot;ajemmaa0@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;HR Manager&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.USER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientB.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                AppUserDTO youssef = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Youssef Tahiri&quot;)
+&nbsp;//                                .email(&quot;youssef@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;Network Engineer&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.USER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientB.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                AppUserDTO laila = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Laila Bennani&quot;)
+&nbsp;//                                .email(&quot;laila@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;Customer Success Manager&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.USER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientB.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                // ========== USERS - Binarios ==========
+&nbsp;//                AppUserDTO mike = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Mike Johnson&quot;)
+&nbsp;//                                .email(&quot;mike@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;Network Administrator&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.USER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientC.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                AppUserDTO sofia = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Sofia Alami&quot;)
+&nbsp;//                                .email(&quot;sofia@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;UX Designer&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.USER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientC.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                AppUserDTO mehdi = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Mehdi Fassi&quot;)
+&nbsp;//                                .email(&quot;mehdi@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;DevOps Engineer&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.USER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientC.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                // ========== USERS - Medina Tech ==========
+&nbsp;//                AppUserDTO hassan = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Hassan Idrissi&quot;)
+&nbsp;//                                .email(&quot;hassan@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;Full Stack Developer&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.USER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientD.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                AppUserDTO nadia = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Nadia Berrada&quot;)
+&nbsp;//                                .email(&quot;nadia@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;Product Manager&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.USER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientD.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                // ========== USERS - Sahara Logistics ==========
+&nbsp;//                AppUserDTO rachid = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Rachid Tazi&quot;)
+&nbsp;//                                .email(&quot;rachid@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;Supply Chain Analyst&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.USER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientE.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                AppUserDTO samira = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Samira Chakir&quot;)
+&nbsp;//                                .email(&quot;samira@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;Logistics Coordinator&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.USER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientE.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                // ========== TICKETS - Bank of Morocco ==========
+&nbsp;//                TicketDTO ticket1 = ticketService.createTicket(
+&nbsp;//                        &quot;Login Issue - Cannot Access Banking Portal&quot;,
+&nbsp;//                        &quot;Multiple users reporting inability to login to the main banking portal. Error message: &#39;Invalid credentials&#39; even with correct password.&quot;,
+&nbsp;//                        john.getUserId(),
+&nbsp;//                        (clientA.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                TicketDTO ticket2 = ticketService.createTicket(
+&nbsp;//                        &quot;Database Connection Timeout&quot;,
+&nbsp;//                        &quot;Transaction processing is experiencing intermittent timeouts. Database connection pool seems to be exhausted during peak hours.&quot;,
+&nbsp;//                        karim.getUserId(),
+&nbsp;//                        (clientA.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                TicketDTO ticket3 = ticketService.createTicket(
+&nbsp;//                        &quot;Report Generation Taking Too Long&quot;,
+&nbsp;//                        &quot;Monthly financial reports that used to take 5 minutes are now taking over 30 minutes to generate. Need optimization.&quot;,
+&nbsp;//                        amina.getUserId(),
+&nbsp;//                        (clientA.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                TicketDTO ticket4 = ticketService.createTicket(
+&nbsp;//                        &quot;Mobile App Sync Issue&quot;,
+&nbsp;//                        &quot;Customer account balances not syncing properly between web and mobile applications.&quot;,
+&nbsp;//                        john.getUserId(),
+&nbsp;//                        (clientA.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                // ========== TICKETS - Atlas Telecom ==========
+&nbsp;//                TicketDTO ticket5 = ticketService.createTicket(
+&nbsp;//                        &quot;Payment Gateway Failure&quot;,
+&nbsp;//                        &quot;Payment service is down for multiple clients. Customers cannot complete transactions. URGENT!&quot;,
+&nbsp;//                        jane.getUserId(),
+&nbsp;//                        (clientB.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                TicketDTO ticket6 = ticketService.createTicket(
+&nbsp;//                        &quot;Network Bandwidth Monitoring Dashboard&quot;,
+&nbsp;//                        &quot;Need a real-time dashboard to monitor network bandwidth usage across all regions.&quot;,
+&nbsp;//                        youssef.getUserId(),
+&nbsp;//                        (clientB.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                TicketDTO ticket7 = ticketService.createTicket(
+&nbsp;//                        &quot;Customer Portal Performance Issues&quot;,
+&nbsp;//                        &quot;Customer portal is loading very slowly. Page load times exceeding 10 seconds.&quot;,
+&nbsp;//                        laila.getUserId(),
+&nbsp;//                        (clientB.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                TicketDTO ticket8 = ticketService.createTicket(
+&nbsp;//                        &quot;SMS Notification Service Down&quot;,
+&nbsp;//                        &quot;Customers are not receiving SMS notifications for bill payments and service updates.&quot;,
+&nbsp;//                        jane.getUserId(),
+&nbsp;//                        (clientB.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                // ========== TICKETS - Binarios ==========
+&nbsp;//                TicketDTO ticket9 = ticketService.createTicket(
+&nbsp;//                        &quot;Dark Mode Feature Request&quot;,
+&nbsp;//                        &quot;Client requests dark mode feature for better user experience during night time usage.&quot;,
+&nbsp;//                        mike.getUserId(),
+&nbsp;//                        (clientC.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                TicketDTO ticket10 = ticketService.createTicket(
+&nbsp;//                        &quot;API Rate Limiting Implementation&quot;,
+&nbsp;//                        &quot;Need to implement rate limiting on public APIs to prevent abuse and ensure fair usage.&quot;,
+&nbsp;//                        mehdi.getUserId(),
+&nbsp;//                        (clientC.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                TicketDTO ticket11 = ticketService.createTicket(
+&nbsp;//                        &quot;UI Redesign for Admin Panel&quot;,
+&nbsp;//                        &quot;Current admin panel UI is outdated. Request for modern, responsive redesign.&quot;,
+&nbsp;//                        sofia.getUserId(),
+&nbsp;//                        (clientC.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                TicketDTO ticket12 = ticketService.createTicket(
+&nbsp;//                        &quot;Docker Container Memory Leak&quot;,
+&nbsp;//                        &quot;Production containers are experiencing memory leaks. Need investigation and fix.&quot;,
+&nbsp;//                        mehdi.getUserId(),
+&nbsp;//                        (clientC.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                // ========== TICKETS - Medina Tech ==========
+&nbsp;//                TicketDTO ticket13 = ticketService.createTicket(
+&nbsp;//                        &quot;CI/CD Pipeline Failing&quot;,
+&nbsp;//                        &quot;Automated deployment pipeline is failing at the build stage. Blocking all releases.&quot;,
+&nbsp;//                        hassan.getUserId(),
+&nbsp;//                        (clientD.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                TicketDTO ticket14 = ticketService.createTicket(
+&nbsp;//                        &quot;Feature: Multi-language Support&quot;,
+&nbsp;//                        &quot;Need to add Arabic and French language support to the application.&quot;,
+&nbsp;//                        nadia.getUserId(),
+&nbsp;//                        (clientD.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                TicketDTO ticket15 = ticketService.createTicket(
+&nbsp;//                        &quot;Security Audit Required&quot;,
+&nbsp;//                        &quot;Annual security audit needs to be conducted. Request penetration testing.&quot;,
+&nbsp;//                        hassan.getUserId(),
+&nbsp;//                        (clientD.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                // ========== TICKETS - Sahara Logistics ==========
+&nbsp;//                TicketDTO ticket16 = ticketService.createTicket(
+&nbsp;//                        &quot;Real-time Tracking Not Updating&quot;,
+&nbsp;//                        &quot;GPS tracking for delivery vehicles is not updating in real-time. Showing positions from 2 hours ago.&quot;,
+&nbsp;//                        rachid.getUserId(),
+&nbsp;//                        (clientE.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                TicketDTO ticket17 = ticketService.createTicket(
+&nbsp;//                        &quot;Inventory Management System Bug&quot;,
+&nbsp;//                        &quot;System showing incorrect stock levels. Causing overselling issues.&quot;,
+&nbsp;//                        samira.getUserId(),
+&nbsp;//                        (clientE.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                TicketDTO ticket18 = ticketService.createTicket(
+&nbsp;//                        &quot;Integration with Customs System&quot;,
+&nbsp;//                        &quot;Need integration with national customs system for automated import/export documentation.&quot;,
+&nbsp;//                        rachid.getUserId(),
+&nbsp;//                        (clientE.getClientId())
+&nbsp;//                );
+&nbsp;//
+&nbsp;//
+&nbsp;//
+&nbsp;//                // ========== ASSIGN TICKETS TO MANAGERS ==========
+&nbsp;//                ticketService.assignTicket(ticket1.getTicketId(), manager3.getUserId());
+&nbsp;//                ticketService.assignTicket(ticket2.getTicketId(), manager3.getUserId());
+&nbsp;//                ticketService.assignTicket(ticket3.getTicketId(), manager3.getUserId());
+&nbsp;//
+&nbsp;//                ticketService.assignTicket(ticket5.getTicketId(), manager2.getUserId());
+&nbsp;//                ticketService.assignTicket(ticket6.getTicketId(), manager2.getUserId());
+&nbsp;//                ticketService.assignTicket(ticket7.getTicketId(), manager2.getUserId());
+&nbsp;//
+&nbsp;//                ticketService.assignTicket(ticket9.getTicketId(), manager1.getUserId());
+&nbsp;//                ticketService.assignTicket(ticket10.getTicketId(), manager1.getUserId());
+&nbsp;//                ticketService.assignTicket(ticket11.getTicketId(), manager1.getUserId());
+&nbsp;//
+&nbsp;//                ticketService.assignTicket(ticket13.getTicketId(), manager4.getUserId());
+&nbsp;//                ticketService.assignTicket(ticket14.getTicketId(), manager4.getUserId());
+&nbsp;//
+&nbsp;//                ticketService.assignTicket(ticket16.getTicketId(), manager5.getUserId());
+&nbsp;//                ticketService.assignTicket(ticket17.getTicketId(), manager5.getUserId());
+&nbsp;//
+&nbsp;//                // ========== APPROVE TICKETS ==========
+&nbsp;//                ticketService.approveTicket(
+&nbsp;//                        ticket1.getTicketId(),
+&nbsp;//                        manager3.getUserId(),
+&nbsp;//                        &quot;Login issue resolved. Password reset mechanism was failing due to expired security tokens. Fixed and tested.&quot;
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                ticketService.approveTicket(
+&nbsp;//                        ticket5.getTicketId(),
+&nbsp;//                        manager2.getUserId(),
+&nbsp;//                        &quot;Payment gateway back online. Issue was with third-party API timeout. Increased timeout limits and added retry logic.&quot;
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                ticketService.approveTicket(
+&nbsp;//                        ticket10.getTicketId(),
+&nbsp;//                        manager1.getUserId(),
+&nbsp;//                        &quot;Rate limiting successfully implemented. Using Redis for distributed rate limiting. Set at 100 requests per minute per IP.&quot;
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                ticketService.approveTicket(
+&nbsp;//                        ticket13.getTicketId(),
+&nbsp;//                        manager4.getUserId(),
+&nbsp;//                        &quot;CI/CD pipeline fixed. Missing environment variable in Jenkins configuration. All builds passing now.&quot;
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                // ========== REJECT TICKETS ==========
+&nbsp;//                ticketService.rejectTicket(
+&nbsp;//                        ticket9.getTicketId(),
+&nbsp;//                        manager1.getUserId(),
+&nbsp;//                        &quot;Dark mode feature not in current roadmap. Will consider for Q3 2026 release. Requires significant UI/UX redesign effort.&quot;
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                ticketService.rejectTicket(
+&nbsp;//                        ticket11.getTicketId(),
+&nbsp;//                        manager1.getUserId(),
+&nbsp;//                        &quot;Admin panel redesign postponed. Current priority is on customer-facing features. Will revisit in 6 months.&quot;
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                ticketService.rejectTicket(
+&nbsp;//                        ticket14.getTicketId(),
+&nbsp;//                        manager4.getUserId(),
+&nbsp;//                        &quot;Multi-language support requires localization team which we don&#39;t have resources for currently. Deferred to 2027.&quot;
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                // ========== ARCHIVE APPROVED TICKETS ==========
+&nbsp;//                ticketService.archiveTicket(ticket1.getTicketId());
+&nbsp;//                ticketService.archiveTicket(ticket5.getTicketId());
+&nbsp;//            }
+&nbsp;//        };
+&nbsp;//    }
+&nbsp;
+&nbsp;
+&nbsp;//    @Bean
+&nbsp;//    CommandLineRunner commandLineRunner(
+&nbsp;//            ClientService clientService,
+&nbsp;//            UserService userService,
+&nbsp;//            TicketService ticketService) {
+&nbsp;//
+&nbsp;//        return args -&gt; {
+&nbsp;//                            ClientDTO clientA = clientService.createClient(
+&nbsp;//                        Client.builder()
+&nbsp;//                                .name(&quot;Bank of Morocco&quot;)
+&nbsp;//                                .email(&quot;contact@bankommm.com&quot;)
+&nbsp;//                                .phone(&quot;123456789&quot;)
+&nbsp;//                                .company(&quot;Bank of Morocco&quot;)
+&nbsp;//                                .status(ClientStatus.ACTIVE)
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//
+&nbsp;//                AppUserDTO youssef = userService.createUser(
+&nbsp;//                        AppUser.builder()
+&nbsp;//                                .name(&quot;Youssef Tahiri&quot;)
+&nbsp;//                                .email(&quot;ajemmaa0@gmail.com&quot;)
+&nbsp;//                                .jobTitle(&quot;Network Engineer&quot;)
+&nbsp;//                                .password(&quot;admin123&quot;)
+&nbsp;//                                .roles(new ArrayList&lt;&gt;(List.of(Role.USER)))
+&nbsp;//                                .client(Client.builder()
+&nbsp;//                                        .clientId(clientA.getClientId())
+&nbsp;//                                        .build())
+&nbsp;//                                .build()
+&nbsp;//                );
+&nbsp;//        };
+&nbsp;//    }
+&nbsp;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-09-30 23:41</div>
+</div>
+</body>
+</html>

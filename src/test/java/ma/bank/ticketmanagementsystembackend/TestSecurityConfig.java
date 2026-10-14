@@ -1,9 +1,7 @@
 package ma.bank.ticketmanagementsystembackend;
 
-import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -14,7 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import jakarta.servlet.http.HttpServletResponse;
 
 @TestConfiguration
-@EnableWebSecurity                          // ← This is what creates the HttpSecurity bean
+@EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 public class TestSecurityConfig {
 

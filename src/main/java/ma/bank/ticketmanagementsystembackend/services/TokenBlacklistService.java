@@ -23,7 +23,6 @@ public class TokenBlacklistService {
                 TimeUnit.MILLISECONDS
         );
     }
-
     // Called on every request in JwtAuthorisationFilter
     public boolean isBlacklisted(String token) {
         return Boolean.TRUE.equals(

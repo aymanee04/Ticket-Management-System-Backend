@@ -1,0 +1,93 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > ClientService</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">ma.bank.ticketmanagementsystembackend.services</a>
+</div>
+
+<h1>Coverage Summary for Class: ClientService (ma.bank.ticketmanagementsystembackend.services)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+</tr>
+  <tr>
+    <td class="name">ClientService$MockitoMock$BVbJBoaD</td>
+  </tr>
+  <tr>
+    <td class="name">ClientService$MockitoMock$BVbJBoaD$auxiliary$GTh4lkHK</td>
+  </tr>
+  <tr>
+    <td class="name">ClientService$MockitoMock$BVbJBoaD$auxiliary$y0VNULpc</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package ma.bank.ticketmanagementsystembackend.services;
+&nbsp;
+&nbsp;import ma.bank.ticketmanagementsystembackend.dtos.dto.ClientDTO;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.Client;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.ClientStatus;
+&nbsp;import java.util.List;
+&nbsp;
+&nbsp;public interface ClientService  {
+&nbsp;    public ClientDTO createClient(Client client);
+&nbsp;    public ClientDTO updateClient(Long id, Client client);
+&nbsp;    public ClientDTO getClientById(Long id);
+&nbsp;    public List&lt;ClientDTO&gt; getAllClients();
+&nbsp;    public List&lt;ClientDTO&gt; getClientsByStatus(ClientStatus status);
+&nbsp;    public ClientDTO suspendClient(Long id, String reason, String adminEmail);
+&nbsp;    public ClientDTO reactivateClient(Long id);
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-09-30 23:41</div>
+</div>
+</body>
+</html>

@@ -314,8 +314,34 @@ class ClientServiceImplTest {
             BusinessException ex = assertThrows(BusinessException.class,
                     () -> clientService.reactivateClient(1L));
 
-            assertEquals("Client is not currently suspended", ex.getMessage());
+            assertEquals("Client is already active", ex.getMessage());
             verify(clientRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("reactivates an inactive client and clears suspension fields")
+        void inactiveClient() {
+            client.setStatus(ClientStatus.INACTIVE);
+            client.setSuspensionReason("Old reason");
+            client.setSuspendedAt(java.time.LocalDateTime.now());
+            client.setSuspendedBy(99L);
+
+            ClientDTO reactivatedDTO = new ClientDTO();
+            reactivatedDTO.setClientId(1L);
+
+            when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+            when(clientRepository.save(client)).thenReturn(client);
+            when(clientMapper.toDTO(client)).thenReturn(reactivatedDTO);
+
+            ClientDTO result = clientService.reactivateClient(1L);
+
+            assertNotNull(result);
+            assertEquals(ClientStatus.ACTIVE, client.getStatus());
+            assertNull(client.getSuspensionReason());
+            assertNull(client.getSuspendedAt());
+            assertNull(client.getSuspendedBy());
+
+            verify(clientRepository).save(client);
         }
     }
 }

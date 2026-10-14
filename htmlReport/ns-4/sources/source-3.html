@@ -1,0 +1,341 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > TicketController</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">ma.bank.ticketmanagementsystembackend.controllers</a>
+</div>
+
+<h1>Coverage Summary for Class: TicketController (ma.bank.ticketmanagementsystembackend.controllers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">TicketController</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (18/18)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (51/51)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package ma.bank.ticketmanagementsystembackend.controllers;
+&nbsp;
+&nbsp;import jakarta.validation.Valid;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import ma.bank.ticketmanagementsystembackend.PaginationUtils;
+&nbsp;import ma.bank.ticketmanagementsystembackend.dtos.*;
+&nbsp;import ma.bank.ticketmanagementsystembackend.dtos.dto.TicketDTO;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.AppUser;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.TicketStatus;
+&nbsp;import ma.bank.ticketmanagementsystembackend.exceptions.BusinessException;
+&nbsp;import ma.bank.ticketmanagementsystembackend.services.TicketService;
+&nbsp;import ma.bank.ticketmanagementsystembackend.services.UserService;
+&nbsp;import org.springframework.data.domain.Page;
+&nbsp;import org.springframework.data.domain.PageRequest;
+&nbsp;import org.springframework.data.domain.Pageable;
+&nbsp;import org.springframework.data.domain.Sort;
+&nbsp;import org.springframework.http.HttpStatus;
+&nbsp;import org.springframework.http.ResponseEntity;
+&nbsp;import org.springframework.security.access.prepost.PreAuthorize;
+&nbsp;import org.springframework.security.core.Authentication;
+&nbsp;import org.springframework.security.core.annotation.AuthenticationPrincipal;
+&nbsp;import org.springframework.web.bind.annotation.*;
+&nbsp;
+&nbsp;import java.util.List;
+&nbsp;
+&nbsp;@RestController
+&nbsp;@RequestMapping(&quot;/api/tickets&quot;)
+&nbsp;@RequiredArgsConstructor
+&nbsp;public class TicketController {
+&nbsp;
+&nbsp;    private final TicketService ticketService;
+&nbsp;    private final UserService userService;
+&nbsp;
+&nbsp;    //  Create
+&nbsp;
+&nbsp;    @PostMapping
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;USER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;TicketDTO&gt; createTicket(
+&nbsp;            Authentication auth,
+&nbsp;            @RequestBody @Valid CreateTicketRequest request) {
+&nbsp;
+<b class="fc">&nbsp;        AppUser currentUser = userService.loadUserByEmail(auth.getName());</b>
+&nbsp;
+<b class="fc">&nbsp;        if (currentUser.getClient() == null) {</b>
+<b class="fc">&nbsp;            throw new BusinessException(&quot;User must belong to a client to create tickets&quot;);</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return ResponseEntity</b>
+<b class="fc">&nbsp;                .status(HttpStatus.CREATED)</b>
+<b class="fc">&nbsp;                .body(ticketService.createTicket(</b>
+<b class="fc">&nbsp;                        request.getTitle(),</b>
+<b class="fc">&nbsp;                        request.getDescription(),</b>
+<b class="fc">&nbsp;                        currentUser.getUserId(),</b>
+<b class="fc">&nbsp;                        currentUser.getClient().getClientId()</b>
+&nbsp;                ));
+&nbsp;    }
+&nbsp;
+&nbsp;    @PostMapping(&quot;/incident&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;ADMIN&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;TicketDTO&gt; createIncident(
+&nbsp;            Authentication auth,
+&nbsp;            @RequestBody @Valid CreateIncidentRequest request) {
+&nbsp;
+<b class="fc">&nbsp;        AppUser currentUser = userService.loadUserByEmail(auth.getName());</b>
+&nbsp;
+<b class="fc">&nbsp;        return ResponseEntity</b>
+<b class="fc">&nbsp;                .status(HttpStatus.CREATED)</b>
+<b class="fc">&nbsp;                .body(ticketService.createMultiClientTicket(</b>
+<b class="fc">&nbsp;                        request.getTitle(),</b>
+<b class="fc">&nbsp;                        request.getDescription(),</b>
+<b class="fc">&nbsp;                        currentUser.getUserId(),</b>
+<b class="fc">&nbsp;                        request.getClientIds()</b>
+&nbsp;                ));
+&nbsp;    }
+&nbsp;
+&nbsp;    //  Ticket Lifecycle
+&nbsp;
+&nbsp;    @PutMapping(&quot;/{id}/assign&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAnyAuthority(&#39;ADMIN&#39;, &#39;MANAGER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;TicketDTO&gt; assignTicket(
+&nbsp;            @PathVariable Long id,
+&nbsp;            @RequestBody @Valid AssignTicketRequest request) {
+<b class="fc">&nbsp;        return ResponseEntity.ok(ticketService.assignTicket(id, request.getAssignedToId()));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PutMapping(&quot;/{id}/approve&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAnyAuthority(&#39;ADMIN&#39;, &#39;MANAGER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;TicketDTO&gt; approveTicket(
+&nbsp;            Authentication auth,
+&nbsp;            @PathVariable Long id,
+&nbsp;            @RequestBody @Valid TicketActionRequest request) {
+&nbsp;
+<b class="fc">&nbsp;        AppUser manager = userService.loadUserByEmail(auth.getName());</b>
+<b class="fc">&nbsp;        return ResponseEntity.ok(</b>
+<b class="fc">&nbsp;                ticketService.approveTicket(id, manager.getUserId(), request.getComment()));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PutMapping(&quot;/{id}/reject&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAnyAuthority(&#39;ADMIN&#39;, &#39;MANAGER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;TicketDTO&gt; rejectTicket(
+&nbsp;            Authentication auth,
+&nbsp;            @PathVariable Long id,
+&nbsp;            @RequestBody @Valid TicketActionRequest request) {
+&nbsp;
+<b class="fc">&nbsp;        AppUser manager = userService.loadUserByEmail(auth.getName());</b>
+<b class="fc">&nbsp;        return ResponseEntity.ok(</b>
+<b class="fc">&nbsp;                ticketService.rejectTicket(id, manager.getUserId(), request.getComment()));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PutMapping(&quot;/{id}/archive&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAnyAuthority(&#39;ADMIN&#39;, &#39;MANAGER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;TicketDTO&gt; archiveTicket(@PathVariable Long id) {
+<b class="fc">&nbsp;        return ResponseEntity.ok(ticketService.archiveTicket(id));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PutMapping(&quot;/{id}/cancel&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAnyAuthority(&#39;ADMIN&#39;, &#39;MANAGER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;TicketDTO&gt; cancelTicket(@PathVariable Long id) {
+<b class="fc">&nbsp;        return ResponseEntity.ok(ticketService.cancelTicket(id));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    //  Delete
+&nbsp;
+&nbsp;    @DeleteMapping(&quot;/{id}&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;ADMIN&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;Void&gt; hardDeleteTicket(@PathVariable Long id) {
+<b class="fc">&nbsp;        ticketService.hardDeleteTicket(id);</b>
+<b class="fc">&nbsp;        return ResponseEntity.noContent().build();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    //  Read
+&nbsp;
+&nbsp;    @GetMapping(&quot;/{id}&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;USER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;TicketDTO&gt; getTicket(@PathVariable Long id,
+&nbsp;                                                Authentication auth) {
+<b class="fc">&nbsp;        AppUser currentUser = userService.loadUserByEmail(auth.getName());</b>
+<b class="fc">&nbsp;        return ResponseEntity.ok(ticketService.getTicketById(id, currentUser));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;USER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;List&lt;TicketDTO&gt;&gt; getAllTickets() {
+<b class="fc">&nbsp;        return ResponseEntity.ok(ticketService.getAllTickets());</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(&quot;/status/{status}&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;USER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;List&lt;TicketDTO&gt;&gt; getTicketsByStatus(@PathVariable TicketStatus status) {
+<b class="fc">&nbsp;        return ResponseEntity.ok(ticketService.getTicketsByStatus(status));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(&quot;/user/{userId}&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;USER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;List&lt;TicketDTO&gt;&gt; getTicketsByUserId(@PathVariable Long userId) {
+<b class="fc">&nbsp;        return ResponseEntity.ok(ticketService.getTicketsByUserId(userId));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(&quot;/client/{clientId}&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;USER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;List&lt;TicketDTO&gt;&gt; getTicketsByClient(@PathVariable Long clientId) {
+<b class="fc">&nbsp;        return ResponseEntity.ok(ticketService.getTicketsByClient(clientId));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(&quot;/assigned/{userId}&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAnyAuthority(&#39;ADMIN&#39;, &#39;MANAGER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;List&lt;TicketDTO&gt;&gt; getTicketsAssignedTo(@PathVariable Long userId) {
+<b class="fc">&nbsp;        return ResponseEntity.ok(ticketService.getTicketsAssignedTo(userId));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(&quot;/search&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;USER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;List&lt;TicketDTO&gt;&gt; searchTickets(@RequestParam String q) {
+<b class="fc">&nbsp;        return ResponseEntity.ok(ticketService.searchTickets(q));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    //  Paginated
+&nbsp;
+&nbsp;    @GetMapping(params = &quot;page&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;USER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;PagedResponse&lt;TicketDTO&gt;&gt; getAllTicketsPaged(
+&nbsp;            Authentication auth,
+&nbsp;            @RequestParam(defaultValue = &quot;0&quot;) int page,
+&nbsp;            @RequestParam(defaultValue = &quot;10&quot;) int size,
+&nbsp;            @RequestParam(defaultValue = &quot;createdAt&quot;) String sortBy,
+&nbsp;            @RequestParam(defaultValue = &quot;desc&quot;) String direction) {
+&nbsp;
+<b class="fc">&nbsp;        Pageable pageable = PaginationUtils.buildPageable(page, size, sortBy, direction);</b>
+<b class="fc">&nbsp;        AppUser currentUser = userService.loadUserByEmail(auth.getName());</b>
+<b class="fc">&nbsp;        return ResponseEntity.ok(</b>
+<b class="fc">&nbsp;                PaginationUtils.toPagedResponse(ticketService.getTicketsPagedForUser(currentUser, pageable)));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(value = &quot;/status/{status}&quot;, params = &quot;page&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;USER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;PagedResponse&lt;TicketDTO&gt;&gt; getTicketsByStatusPaged(
+&nbsp;            Authentication auth,
+&nbsp;            @PathVariable TicketStatus status,
+&nbsp;            @RequestParam(defaultValue = &quot;0&quot;) int page,
+&nbsp;            @RequestParam(defaultValue = &quot;10&quot;) int size) {
+&nbsp;
+<b class="fc">&nbsp;        Pageable pageable = PageRequest.of(page, size,</b>
+<b class="fc">&nbsp;                Sort.by(Sort.Direction.DESC, &quot;createdAt&quot;));</b>
+<b class="fc">&nbsp;        AppUser currentUser = userService.loadUserByEmail(auth.getName());</b>
+<b class="fc">&nbsp;        return ResponseEntity.ok(</b>
+<b class="fc">&nbsp;                PaginationUtils.toPagedResponse(ticketService.getTicketsByStatusPagedForUser(status, currentUser, pageable)));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(value = &quot;/search&quot;, params = &quot;page&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAuthority(&#39;USER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;PagedResponse&lt;TicketDTO&gt;&gt; searchTicketsPaged(
+&nbsp;            Authentication auth,
+&nbsp;            @RequestParam String q,
+&nbsp;            @RequestParam(defaultValue = &quot;0&quot;) int page,
+&nbsp;            @RequestParam(defaultValue = &quot;10&quot;) int size) {
+&nbsp;
+<b class="fc">&nbsp;        Pageable pageable = PageRequest.of(page, size,</b>
+<b class="fc">&nbsp;                Sort.by(Sort.Direction.DESC, &quot;createdAt&quot;));</b>
+<b class="fc">&nbsp;        AppUser currentUser = userService.loadUserByEmail(auth.getName());</b>
+<b class="fc">&nbsp;        return ResponseEntity.ok(</b>
+<b class="fc">&nbsp;                PaginationUtils.toPagedResponse(ticketService.searchTicketsPagedForUser(q, currentUser, pageable)));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-09-30 23:41</div>
+</div>
+</body>
+</html>

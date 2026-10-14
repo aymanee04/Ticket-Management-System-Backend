@@ -1,0 +1,239 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > JwtAuthorisationFilter</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">ma.bank.ticketmanagementsystembackend.security.filters</a>
+</div>
+
+<h1>Coverage Summary for Class: JwtAuthorisationFilter (ma.bank.ticketmanagementsystembackend.security.filters)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">JwtAuthorisationFilter</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/40)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package ma.bank.ticketmanagementsystembackend.security.filters;
+&nbsp;
+&nbsp;import com.auth0.jwt.JWT;
+&nbsp;import com.auth0.jwt.JWTVerifier;
+&nbsp;import com.auth0.jwt.algorithms.Algorithm;
+&nbsp;import com.auth0.jwt.interfaces.DecodedJWT;
+&nbsp;import jakarta.servlet.FilterChain;
+&nbsp;import jakarta.servlet.ServletException;
+&nbsp;import jakarta.servlet.http.HttpServletRequest;
+&nbsp;import jakarta.servlet.http.HttpServletResponse;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import ma.bank.ticketmanagementsystembackend.controllers.AttachmentController;
+&nbsp;import ma.bank.ticketmanagementsystembackend.exceptions.ErrorResponse;
+&nbsp;import ma.bank.ticketmanagementsystembackend.security.JwtUtils;
+&nbsp;import ma.bank.ticketmanagementsystembackend.services.TokenBlacklistService;
+&nbsp;import org.slf4j.Logger;
+&nbsp;import org.slf4j.LoggerFactory;
+&nbsp;import org.springframework.context.ApplicationContext;
+&nbsp;import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+&nbsp;import org.springframework.security.core.GrantedAuthority;
+&nbsp;import org.springframework.security.core.authority.SimpleGrantedAuthority;
+&nbsp;import org.springframework.security.core.context.SecurityContextHolder;
+&nbsp;import org.springframework.web.filter.OncePerRequestFilter;
+&nbsp;
+&nbsp;import java.io.IOException;
+&nbsp;import java.util.ArrayList;
+&nbsp;import java.util.Collection;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Map;
+&nbsp;
+&nbsp;@RequiredArgsConstructor
+&nbsp;public class JwtAuthorisationFilter extends OncePerRequestFilter {
+&nbsp;
+<b class="nc">&nbsp;    private static final Logger log = LoggerFactory.getLogger(JwtAuthorisationFilter.class);</b>
+&nbsp;    private final ApplicationContext applicationContext;
+&nbsp;
+&nbsp;    @Override
+&nbsp;    protected void doFilterInternal(HttpServletRequest request,
+&nbsp;                                    HttpServletResponse response,
+&nbsp;                                    FilterChain filterChain)
+&nbsp;            throws ServletException, IOException {
+&nbsp;
+&nbsp;        // Skip entirely for auth endpoints
+<b class="nc">&nbsp;        if (request.getServletPath().equals(&quot;/auth/login&quot;) ||</b>
+<b class="nc">&nbsp;                request.getServletPath().equals(&quot;/auth/refreshToken&quot;) ||</b>
+<b class="nc">&nbsp;                request.getServletPath().equals(&quot;/auth/logout&quot;)) {</b>
+<b class="nc">&nbsp;            filterChain.doFilter(request, response);</b>
+&nbsp;            return;
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        String authorizationHeader = request.getHeader(JwtUtils.AUTH_HEADER);</b>
+&nbsp;
+&nbsp;        // No token at all — just continue, Spring Security handles the 401
+<b class="nc">&nbsp;        if (authorizationHeader == null || !authorizationHeader.startsWith(JwtUtils.PREFIX)) {</b>
+<b class="nc">&nbsp;            filterChain.doFilter(request, response);</b>
+&nbsp;            return;
+&nbsp;        }
+&nbsp;
+&nbsp;        try {
+<b class="nc">&nbsp;            String token = authorizationHeader.substring(JwtUtils.PREFIX.length());</b>
+&nbsp;
+&nbsp;            // ── Blacklist check FIRST — before decoding ──────────────────
+<b class="nc">&nbsp;            TokenBlacklistService blacklist =</b>
+<b class="nc">&nbsp;                    applicationContext.getBean(TokenBlacklistService.class);</b>
+<b class="nc">&nbsp;            if (blacklist.isBlacklisted(token)) {</b>
+<b class="nc">&nbsp;                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);</b>
+<b class="nc">&nbsp;                response.setContentType(&quot;application/json&quot;);</b>
+<b class="nc">&nbsp;                response.setCharacterEncoding(&quot;UTF-8&quot;);</b>
+<b class="nc">&nbsp;                response.getWriter().write(&quot;&quot;&quot;</b>
+&nbsp;                {&quot;status&quot;:401,&quot;error&quot;:&quot;Unauthorized&quot;,
+&nbsp;                 &quot;message&quot;:&quot;Token has been revoked. Please login again.&quot;,
+&nbsp;                 &quot;type&quot;:&quot;TOKEN_REVOKED&quot;}
+&nbsp;            &quot;&quot;&quot;);
+&nbsp;                return;
+&nbsp;            }
+&nbsp;            // ─────────────────────────────────────────────────────────────
+&nbsp;
+<b class="nc">&nbsp;            Algorithm algorithm = Algorithm.HMAC256(JwtUtils.SECRET);</b>
+<b class="nc">&nbsp;            JWTVerifier verifier = JWT.require(algorithm).build();</b>
+<b class="nc">&nbsp;            DecodedJWT decodedJWT = verifier.verify(token);</b>
+&nbsp;
+<b class="nc">&nbsp;            String username = decodedJWT.getSubject();</b>
+<b class="nc">&nbsp;            List&lt;String&gt; roles = decodedJWT.getClaim(&quot;roles&quot;).asList(String.class);</b>
+&nbsp;
+<b class="nc">&nbsp;            Collection&lt;GrantedAuthority&gt; authorities = new ArrayList&lt;&gt;();</b>
+<b class="nc">&nbsp;            if (roles != null) {</b>
+<b class="nc">&nbsp;                for (String role : roles) {</b>
+<b class="nc">&nbsp;                    authorities.add(new SimpleGrantedAuthority(role));</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            SecurityContextHolder.getContext().setAuthentication(</b>
+&nbsp;                    new UsernamePasswordAuthenticationToken(username, null, authorities));
+&nbsp;
+&nbsp;        } catch (Exception e) {
+<b class="nc">&nbsp;            log.warn(&quot;JWT validation failed: {}&quot;, e.getMessage());</b>
+&nbsp;
+&nbsp;            try {
+<b class="nc">&nbsp;                response.setStatus(HttpServletResponse.SC_FORBIDDEN);</b>
+<b class="nc">&nbsp;                response.setContentType(&quot;application/json&quot;);</b>
+<b class="nc">&nbsp;                response.setCharacterEncoding(&quot;UTF-8&quot;);</b>
+&nbsp;
+&nbsp;                // ── Second bug fix — use a plain Map instead of ErrorResponse ──
+&nbsp;                // ErrorResponse uses LocalDateTime which Jackson can&#39;t serialize
+&nbsp;                // without the JSR310 module, causing the secondary error you saw
+<b class="nc">&nbsp;                Map&lt;String, Object&gt; errorBody = new java.util.HashMap&lt;&gt;();</b>
+<b class="nc">&nbsp;                errorBody.put(&quot;status&quot;, 403);</b>
+<b class="nc">&nbsp;                errorBody.put(&quot;error&quot;, &quot;Forbidden&quot;);</b>
+<b class="nc">&nbsp;                errorBody.put(&quot;message&quot;, &quot;Invalid or expired token&quot;);</b>
+<b class="nc">&nbsp;                errorBody.put(&quot;type&quot;, &quot;JWT_VALIDATION_FAILED&quot;);</b>
+<b class="nc">&nbsp;                errorBody.put(&quot;timestamp&quot;, System.currentTimeMillis());</b>
+&nbsp;
+<b class="nc">&nbsp;                new com.fasterxml.jackson.databind.ObjectMapper()</b>
+<b class="nc">&nbsp;                        .writeValue(response.getWriter(), errorBody);</b>
+&nbsp;            } catch (IOException ioException) {
+<b class="nc">&nbsp;                log.error(&quot;Failed to write error response: {}&quot;, ioException.getMessage());</b>
+&nbsp;            }
+&nbsp;            return;
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        filterChain.doFilter(request, response);</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-09-30 23:41</div>
+</div>
+</body>
+</html>

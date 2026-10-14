@@ -1,0 +1,115 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > Client</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">ma.bank.ticketmanagementsystembackend.entities</a>
+</div>
+
+<h1>Coverage Summary for Class: Client (ma.bank.ticketmanagementsystembackend.entities)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">Client</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package ma.bank.ticketmanagementsystembackend.entities;
+&nbsp;
+&nbsp;import com.fasterxml.jackson.annotation.JsonProperty;
+&nbsp;import jakarta.persistence.*;
+&nbsp;import lombok.*;
+&nbsp;
+&nbsp;import java.time.LocalDateTime;
+&nbsp;import java.util.Set;
+&nbsp;
+&nbsp;@Entity
+&nbsp;@Data
+&nbsp;@NoArgsConstructor
+&nbsp;@AllArgsConstructor
+&nbsp;@Builder
+&nbsp;@Table(name = &quot;clients&quot;)
+&nbsp;@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+&nbsp;@ToString(exclude = {&quot;tickets&quot;, &quot;employees&quot;})
+&nbsp;public class Client {
+&nbsp;    @Id
+&nbsp;    @GeneratedValue(strategy = GenerationType.IDENTITY)
+&nbsp;    @EqualsAndHashCode.Include
+&nbsp;    private Long clientId;
+&nbsp;
+&nbsp;    private String name;
+&nbsp;
+&nbsp;    private String email;
+&nbsp;
+&nbsp;    private String phone;
+&nbsp;
+&nbsp;    private String company;
+&nbsp;
+&nbsp;    @Enumerated(EnumType.STRING)
+&nbsp;    private ClientStatus status;
+&nbsp;
+&nbsp;    private String suspensionReason;
+&nbsp;    private LocalDateTime suspendedAt;
+&nbsp;    private Long suspendedBy;
+&nbsp;
+&nbsp;    private LocalDateTime createdAt;
+&nbsp;
+&nbsp;    @ManyToMany(mappedBy = &quot;clients&quot;)
+&nbsp;    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+&nbsp;    private Set&lt;Ticket&gt; tickets;
+&nbsp;
+&nbsp;    @OneToMany(mappedBy = &quot;client&quot;, fetch = FetchType.EAGER)
+&nbsp;    private Set&lt;AppUser&gt; employees;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-09-30 23:41</div>
+</div>
+</body>
+</html>

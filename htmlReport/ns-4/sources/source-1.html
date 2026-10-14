@@ -1,0 +1,215 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > AttachmentController</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">ma.bank.ticketmanagementsystembackend.controllers</a>
+</div>
+
+<h1>Coverage Summary for Class: AttachmentController (ma.bank.ticketmanagementsystembackend.controllers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">AttachmentController</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    33.3%
+  </span>
+  <span class="absValue">
+    (2/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    53.6%
+  </span>
+  <span class="absValue">
+    (15/28)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package ma.bank.ticketmanagementsystembackend.controllers;
+&nbsp;
+&nbsp;import ma.bank.ticketmanagementsystembackend.dtos.dto.AttachmentDTO;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.AppUser;
+&nbsp;import ma.bank.ticketmanagementsystembackend.services.AttachmentService;
+&nbsp;import org.slf4j.Logger;
+&nbsp;import org.slf4j.LoggerFactory;
+&nbsp;import org.springframework.core.io.InputStreamResource;
+&nbsp;import org.springframework.core.io.Resource;
+&nbsp;import org.springframework.http.HttpHeaders;
+&nbsp;import org.springframework.http.HttpStatus;
+&nbsp;import org.springframework.http.MediaType;
+&nbsp;import org.springframework.http.ResponseEntity;
+&nbsp;import org.springframework.security.access.prepost.PreAuthorize;
+&nbsp;import org.springframework.security.core.annotation.AuthenticationPrincipal;
+&nbsp;import org.springframework.web.bind.annotation.*;
+&nbsp;import org.springframework.web.multipart.MultipartFile;
+&nbsp;
+&nbsp;import java.io.ByteArrayInputStream;
+&nbsp;import java.io.IOException;
+&nbsp;import java.io.InputStream;
+&nbsp;import java.net.URL;
+&nbsp;import java.net.URLConnection;
+&nbsp;import java.util.List;
+&nbsp;
+&nbsp;@RestController
+&nbsp;@RequestMapping(&quot;/api/attachments&quot;)
+&nbsp;public class AttachmentController {
+&nbsp;
+<b class="fc">&nbsp;    private static final Logger logger = LoggerFactory.getLogger(AttachmentController.class);</b>
+&nbsp;    private final AttachmentService attachmentService;
+&nbsp;
+<b class="fc">&nbsp;    public AttachmentController(AttachmentService attachmentService) {</b>
+<b class="fc">&nbsp;        this.attachmentService = attachmentService;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PostMapping(&quot;/ticket/{ticketId}&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAnyAuthority(&#39;USER&#39; )&quot;)
+&nbsp;    public ResponseEntity&lt;AttachmentDTO&gt; uploadAttachment(
+&nbsp;            @PathVariable Long ticketId,
+&nbsp;            @RequestParam(&quot;file&quot;) MultipartFile file) {
+&nbsp;        try {
+<b class="fc">&nbsp;            AttachmentDTO attachment = attachmentService.uploadAttachment(ticketId, file);</b>
+<b class="fc">&nbsp;            return ResponseEntity.ok(attachment);</b>
+&nbsp;        } catch (Exception e) {
+<b class="fc">&nbsp;            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(&quot;/ticket/{ticketId}&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAnyAuthority(&#39;USER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;List&lt;AttachmentDTO&gt;&gt; getAttachmentsByTicket(@PathVariable Long ticketId) {
+<b class="fc">&nbsp;        return ResponseEntity.ok(attachmentService.getAttachmentsByTicket(ticketId));</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @DeleteMapping(&quot;/{id}&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAnyAuthority(&#39;USER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;Void&gt; deleteAttachment(@PathVariable Long id,@AuthenticationPrincipal AppUser user) throws IOException {
+<b class="fc">&nbsp;        attachmentService.deleteAttachment(id, user);</b>
+<b class="fc">&nbsp;        return ResponseEntity.noContent().build();</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @GetMapping(&quot;/{id}/download&quot;)
+&nbsp;    @PreAuthorize(&quot;hasAnyAuthority(&#39;ADMIN&#39;, &#39;MANAGER&#39;)&quot;)
+&nbsp;    public ResponseEntity&lt;Resource&gt; downloadAttachment(@PathVariable Long id) {
+&nbsp;        try {
+<b class="fc">&nbsp;            AttachmentDTO attachment = attachmentService.getAttachmentById(id);</b>
+&nbsp;
+<b class="fc">&nbsp;            if (attachment == null) {</b>
+<b class="fc">&nbsp;                return ResponseEntity.notFound().build();</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            URL url = new URL(attachment.getCloudinaryUrl());</b>
+<b class="nc">&nbsp;            URLConnection connection = url.openConnection();</b>
+<b class="nc">&nbsp;            InputStream inputStream = connection.getInputStream();</b>
+&nbsp;
+<b class="nc">&nbsp;            byte[] fileContent = inputStream.readAllBytes();</b>
+&nbsp;            inputStream.close();
+&nbsp;
+<b class="nc">&nbsp;            InputStreamResource resource = new InputStreamResource(new ByteArrayInputStream(fileContent));</b>
+&nbsp;
+<b class="nc">&nbsp;            String contentType = attachment.getFileType();</b>
+<b class="nc">&nbsp;            if (contentType == null || contentType.isEmpty()) {</b>
+<b class="nc">&nbsp;                contentType = &quot;application/octet-stream&quot;;</b>
+&nbsp;            }
+&nbsp;
+<b class="nc">&nbsp;            return ResponseEntity.ok()</b>
+<b class="nc">&nbsp;                    .contentType(MediaType.parseMediaType(contentType))</b>
+<b class="nc">&nbsp;                    .header(HttpHeaders.CONTENT_DISPOSITION,</b>
+<b class="nc">&nbsp;                            &quot;attachment; filename=\&quot;&quot; + attachment.getFileName() + &quot;\&quot;&quot;)</b>
+<b class="nc">&nbsp;                    .contentLength(fileContent.length)</b>
+<b class="nc">&nbsp;                    .body(resource);</b>
+&nbsp;
+&nbsp;        } catch (Exception e) {
+<b class="fc">&nbsp;            logger.error(&quot;Error downloading attachment with id {}: {}&quot;, id, e.getMessage());</b>
+<b class="fc">&nbsp;            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-09-30 23:41</div>
+</div>
+</body>
+</html>

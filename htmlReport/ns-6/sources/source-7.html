@@ -1,0 +1,137 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > Ticket</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">ma.bank.ticketmanagementsystembackend.entities</a>
+</div>
+
+<h1>Coverage Summary for Class: Ticket (ma.bank.ticketmanagementsystembackend.entities)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">Ticket</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package ma.bank.ticketmanagementsystembackend.entities;
+&nbsp;
+&nbsp;import com.fasterxml.jackson.annotation.JsonProperty;
+&nbsp;import jakarta.persistence.*;
+&nbsp;import lombok.*;
+&nbsp;
+&nbsp;import java.time.LocalDateTime;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Set;
+&nbsp;
+&nbsp;@Entity
+&nbsp;@Data @NoArgsConstructor @AllArgsConstructor
+&nbsp;@Table(name = &quot;tickets&quot;)
+&nbsp;@Builder
+&nbsp;@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+&nbsp;@ToString(exclude = &quot;clients&quot;)
+&nbsp;public class Ticket {
+&nbsp;
+&nbsp;    @Id
+&nbsp;    @GeneratedValue(strategy = GenerationType.IDENTITY)
+&nbsp;    @EqualsAndHashCode.Include
+&nbsp;    private Long ticketId;
+&nbsp;
+&nbsp;    private String title;
+&nbsp;
+&nbsp;    @Column(columnDefinition = &quot;TEXT&quot;)
+&nbsp;    private String description;
+&nbsp;
+&nbsp;    @Enumerated(EnumType.STRING)
+&nbsp;    private TicketStatus status;
+&nbsp;
+&nbsp;    private LocalDateTime createdAt;
+&nbsp;
+&nbsp;    private LocalDateTime updatedAt;
+&nbsp;
+&nbsp;    private LocalDateTime validatedAt;
+&nbsp;
+&nbsp;    private String validationComment;
+&nbsp;
+&nbsp;
+&nbsp;    @ManyToOne
+&nbsp;    @JoinColumn(name = &quot;created_by&quot;)
+&nbsp;    private AppUser createdBy;
+&nbsp;
+&nbsp;
+&nbsp;    @ManyToOne
+&nbsp;    @JoinColumn(name = &quot;assigned_to&quot;)
+&nbsp;    private AppUser assignedTo;
+&nbsp;
+&nbsp;    @OneToMany(mappedBy = &quot;ticket&quot;, cascade = CascadeType.ALL, orphanRemoval = true)
+&nbsp;    private List&lt;Attachment&gt; attachments;
+&nbsp;
+&nbsp;
+&nbsp;    @ManyToOne
+&nbsp;    @JoinColumn(name = &quot;validated_by&quot;)
+&nbsp;    private AppUser validatedBy;
+&nbsp;
+&nbsp;//    @Column(name = &quot;scheduled_delete_at&quot;)
+&nbsp;//    private LocalDateTime scheduledDeleteAt;
+&nbsp;
+&nbsp;    @ManyToMany
+&nbsp;    @JoinTable(
+&nbsp;            name = &quot;ticket_client&quot;,
+&nbsp;            joinColumns = @JoinColumn(name = &quot;ticket_id&quot;),
+&nbsp;            inverseJoinColumns = @JoinColumn(name = &quot;client_id&quot;)
+&nbsp;    )
+&nbsp;    @JsonProperty(access =  JsonProperty.Access.WRITE_ONLY)
+&nbsp;    private Set&lt;Client&gt; clients;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-09-30 23:41</div>
+</div>
+</body>
+</html>

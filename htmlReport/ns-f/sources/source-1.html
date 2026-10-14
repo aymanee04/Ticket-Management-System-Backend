@@ -1,0 +1,166 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > TicketRepository</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">ma.bank.ticketmanagementsystembackend.repositories</a>
+</div>
+
+<h1>Coverage Summary for Class: TicketRepository (ma.bank.ticketmanagementsystembackend.repositories)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+</tr>
+  <tr>
+    <td class="name">TicketRepository$MockitoMock$YAt906Lo</td>
+  </tr>
+  <tr>
+    <td class="name">TicketRepository$MockitoMock$YAt906Lo$auxiliary$mhrnpKXs</td>
+  </tr>
+  <tr>
+    <td class="name">TicketRepository$MockitoMock$YAt906Lo$auxiliary$V5PqVcoK</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package ma.bank.ticketmanagementsystembackend.repositories;
+&nbsp;
+&nbsp;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.*;
+&nbsp;import org.springframework.data.domain.Page;
+&nbsp;import org.springframework.data.domain.Pageable;
+&nbsp;import org.springframework.data.jpa.repository.JpaRepository;
+&nbsp;import org.springframework.data.jpa.repository.Query;
+&nbsp;import org.springframework.data.repository.query.Param;
+&nbsp;import java.util.List;
+&nbsp;
+&nbsp;public interface TicketRepository extends JpaRepository&lt;Ticket, Long&gt; {
+&nbsp;
+&nbsp;    List&lt;Ticket&gt; findByAssignedTo(AppUser user);
+&nbsp;
+&nbsp;    List&lt;Ticket&gt; findByStatus(TicketStatus status);
+&nbsp;
+&nbsp;    List&lt;Ticket&gt; findByClients_ClientId(Long clientId);
+&nbsp;
+&nbsp;    List&lt;Ticket&gt; findTicketByCreatedBy_UserId(Long userId);
+&nbsp;//  Page&lt;Ticket&gt; findByClients_ClientId(Long clientId, Pageable pageable);
+&nbsp;
+&nbsp;
+&nbsp;   //####################################################//
+&nbsp;    Page&lt;Ticket&gt; findByStatus(TicketStatus status, Pageable pageable);
+&nbsp;
+&nbsp;    @Query(&quot;SELECT DISTINCT t FROM Ticket t &quot; +
+&nbsp;            &quot;LEFT JOIN t.clients c &quot; +
+&nbsp;            &quot;LEFT JOIN t.createdBy u &quot; +
+&nbsp;            &quot;WHERE LOWER(t.title) LIKE LOWER(CONCAT(&#39;%&#39;, :searchTerm, &#39;%&#39;)) OR &quot; +
+&nbsp;            &quot;LOWER(c.name) LIKE LOWER(CONCAT(&#39;%&#39;, :searchTerm, &#39;%&#39;)) OR &quot; +
+&nbsp;            &quot;LOWER(c.company) LIKE LOWER(CONCAT(&#39;%&#39;, :searchTerm, &#39;%&#39;)) OR &quot; +
+&nbsp;            &quot;LOWER(u.name) LIKE LOWER(CONCAT(&#39;%&#39;, :searchTerm, &#39;%&#39;))  &quot;
+&nbsp;    )
+&nbsp;    Page&lt;Ticket&gt; searchTickets(@Param(&quot;searchTerm&quot;) String searchTerm, Pageable pageable);
+&nbsp;   //####################################################//
+&nbsp;
+&nbsp;
+&nbsp;    @Query(&quot;SELECT DISTINCT t FROM Ticket t &quot; +
+&nbsp;            &quot;LEFT JOIN t.clients c &quot; +
+&nbsp;            &quot;LEFT JOIN t.createdBy u &quot; +
+&nbsp;            &quot;WHERE LOWER(t.title) LIKE LOWER(CONCAT(&#39;%&#39;, :searchTerm, &#39;%&#39;)) OR &quot; +
+&nbsp;            &quot;LOWER(c.name) LIKE LOWER(CONCAT(&#39;%&#39;, :searchTerm, &#39;%&#39;)) OR &quot; +
+&nbsp;            &quot;LOWER(c.company) LIKE LOWER(CONCAT(&#39;%&#39;, :searchTerm, &#39;%&#39;)) OR &quot; +
+&nbsp;            &quot;LOWER(u.name) LIKE LOWER(CONCAT(&#39;%&#39;, :searchTerm, &#39;%&#39;))  &quot;
+&nbsp;    )
+&nbsp;
+&nbsp;    List&lt;Ticket&gt; searchTickets(@Param(&quot;searchTerm&quot;) String searchTerm);
+&nbsp;
+&nbsp;
+&nbsp;    Page&lt;Ticket&gt; findByClients_ClientId(Long clientId, Pageable pageable);
+&nbsp;
+&nbsp;    @Query(&quot;SELECT DISTINCT t FROM Ticket t &quot; +
+&nbsp;            &quot;LEFT JOIN t.clients c &quot; +
+&nbsp;            &quot;LEFT JOIN t.createdBy u &quot; +
+&nbsp;            &quot;WHERE c.clientId = :clientId AND (&quot; +
+&nbsp;            &quot;LOWER(t.title) LIKE LOWER(CONCAT(&#39;%&#39;, :searchTerm, &#39;%&#39;)) OR &quot; +
+&nbsp;            &quot;LOWER(c.name) LIKE LOWER(CONCAT(&#39;%&#39;, :searchTerm, &#39;%&#39;)) OR &quot; +
+&nbsp;            &quot;LOWER(u.name) LIKE LOWER(CONCAT(&#39;%&#39;, :searchTerm, &#39;%&#39;)))&quot;)
+&nbsp;    Page&lt;Ticket&gt; searchTicketsByClient(
+&nbsp;            @Param(&quot;searchTerm&quot;) String searchTerm,
+&nbsp;            @Param(&quot;clientId&quot;) Long clientId,
+&nbsp;            Pageable pageable
+&nbsp;    );
+&nbsp;
+&nbsp;    Page&lt;Ticket&gt; findByStatusAndClients_ClientId(
+&nbsp;            TicketStatus status,
+&nbsp;            Long clientId,
+&nbsp;            Pageable pageable
+&nbsp;    );
+&nbsp;
+&nbsp;//    @Modifying
+&nbsp;//    @Query(&quot;&quot;&quot;
+&nbsp;//            DELETE FROM Ticket t
+&nbsp;//            WHERE t.status = :#{#status}
+&nbsp;//              AND t.scheduledDeleteAt IS NOT NULL
+&nbsp;//              AND t.scheduledDeleteAt &lt; :cutoff
+&nbsp;//            &quot;&quot;&quot;)
+&nbsp;//    int deleteExpiredCancelledTickets(
+&nbsp;//            @Param(&quot;cutoff&quot;) LocalDateTime cutoff,
+&nbsp;//            @Param(&quot;status&quot;) TicketStatus status
+&nbsp;//    );
+&nbsp;//
+&nbsp;//    // Convenience overload called by the scheduler (always passes CANCELLED)
+&nbsp;//    default int deleteExpiredCancelledTickets(LocalDateTime cutoff) {
+&nbsp;//        return deleteExpiredCancelledTickets(cutoff, TicketStatus.CANCELLED);
+&nbsp;//    }
+&nbsp;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-09-30 23:41</div>
+</div>
+</body>
+</html>

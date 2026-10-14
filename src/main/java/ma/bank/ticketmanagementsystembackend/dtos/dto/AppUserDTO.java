@@ -6,17 +6,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import ma.bank.ticketmanagementsystembackend.entities.Role;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.Collection;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AppUserDTO implements Serializable {
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class AppUserDTO {
     private Long userId;
     private String name;
     private String jobTitle;

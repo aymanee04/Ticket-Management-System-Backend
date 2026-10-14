@@ -1,0 +1,98 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > EmailService</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">ma.bank.ticketmanagementsystembackend.services</a>
+</div>
+
+<h1>Coverage Summary for Class: EmailService (ma.bank.ticketmanagementsystembackend.services)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+</tr>
+  <tr>
+    <td class="name">EmailService$MockitoMock$v5e7bggG</td>
+  </tr>
+  <tr>
+    <td class="name">EmailService$MockitoMock$v5e7bggG$auxiliary$NIVgi5RQ</td>
+  </tr>
+  <tr>
+    <td class="name">EmailService$MockitoMock$v5e7bggG$auxiliary$ZhGuhHWN</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package ma.bank.ticketmanagementsystembackend.services;
+&nbsp;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.AppUser;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.Client;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.Ticket;
+&nbsp;
+&nbsp;public interface EmailService {
+&nbsp;
+&nbsp;    void sendTicketCreatedEmail(Ticket ticket);
+&nbsp;    void sendTicketAssignedEmail(Ticket ticket, AppUser assignedTo);
+&nbsp;    void sendTicketValidatedEmail(Ticket ticket);
+&nbsp;    void sendTicketRejectedEmail(Ticket ticket);
+&nbsp;
+&nbsp;    void sendClientSuspendedEmail(Client client);
+&nbsp;    void sendClientReactivatedEmail(Client client);
+&nbsp;
+&nbsp;    void sendPasswordChangedEmail(AppUser user);
+&nbsp;    void sendWelcomeEmail(AppUser user, String tempPassword);
+&nbsp;
+&nbsp;    void sendIncidentNotification(Ticket incident);
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-09-30 23:41</div>
+</div>
+</body>
+</html>

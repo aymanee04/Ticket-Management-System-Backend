@@ -1,6 +1,5 @@
 package ma.bank.ticketmanagementsystembackend.services;
 
-import com.cloudinary.Cloudinary;
 import lombok.RequiredArgsConstructor;
 import ma.bank.ticketmanagementsystembackend.cloudinary.CloudinaryService;
 import ma.bank.ticketmanagementsystembackend.dtos.DownloadedFile;

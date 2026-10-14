@@ -1,5 +1,6 @@
 package ma.bank.ticketmanagementsystembackend.entities;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 public enum TicketStatus implements Serializable {
@@ -8,5 +9,8 @@ public enum TicketStatus implements Serializable {
     REJECTED,
     ARCHIVED,
     CANCELLED,
-    PENDING_VALIDATION
+    PENDING_VALIDATION;
+    
+    @Serial
+    private static final long serialVersionUID = 1L;
 }

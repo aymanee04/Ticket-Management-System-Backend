@@ -1,0 +1,459 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > EmailServiceImpl</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">ma.bank.ticketmanagementsystembackend.services</a>
+</div>
+
+<h1>Coverage Summary for Class: EmailServiceImpl (ma.bank.ticketmanagementsystembackend.services)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">EmailServiceImpl</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/18)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/46)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/157)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package ma.bank.ticketmanagementsystembackend.services;
+&nbsp;
+&nbsp;import jakarta.mail.MessagingException;
+&nbsp;import jakarta.mail.internet.MimeMessage;
+&nbsp;import lombok.RequiredArgsConstructor;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.AppUser;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.Client;
+&nbsp;import ma.bank.ticketmanagementsystembackend.entities.Ticket;
+&nbsp;import ma.bank.ticketmanagementsystembackend.exceptions.EmailDeliveryException;
+&nbsp;import org.slf4j.Logger;
+&nbsp;import org.slf4j.LoggerFactory;
+&nbsp;import org.springframework.beans.factory.annotation.Value;
+&nbsp;import org.springframework.mail.javamail.JavaMailSender;
+&nbsp;import org.springframework.mail.javamail.MimeMessageHelper;
+&nbsp;import org.springframework.scheduling.annotation.Async;
+&nbsp;import org.springframework.stereotype.Service;
+&nbsp;import org.thymeleaf.TemplateEngine;
+&nbsp;import org.thymeleaf.context.Context;
+&nbsp;
+&nbsp;import java.time.format.DateTimeFormatter;
+&nbsp;import java.util.Locale;
+&nbsp;
+&nbsp;@Service
+&nbsp;@RequiredArgsConstructor
+&nbsp;public class EmailServiceImpl implements EmailService {
+&nbsp;
+<b class="nc">&nbsp;    private static final Logger logger = LoggerFactory.getLogger(EmailServiceImpl.class);</b>
+<b class="nc">&nbsp;    private static final DateTimeFormatter DATE_FORMATTER =</b>
+<b class="nc">&nbsp;            DateTimeFormatter.ofPattern(&quot;MMMM dd, yyyy &#39;at&#39; HH:mm&quot;);</b>
+&nbsp;    private final JavaMailSender mailSender;
+&nbsp;    private final TemplateEngine templateEngine;
+&nbsp;    @Value(&quot;${app.email.from:noreply@ticketsystem.com}&quot;)
+&nbsp;    private String fromEmail;
+&nbsp;    @Value(&quot;${app.email.enabled:true}&quot;)
+&nbsp;    private Boolean emailEnabled;
+&nbsp;    @Value(&quot;${app.base.url:http://localhost:4200}&quot;)
+&nbsp;    private String baseUrl;
+&nbsp;
+&nbsp;    @Override
+&nbsp;    @Async
+&nbsp;    public void sendTicketCreatedEmail(Ticket ticket) {
+<b class="nc">&nbsp;        if (isEmailDisabled()) return;</b>
+&nbsp;        try {
+<b class="nc">&nbsp;            Context context = new Context(Locale.ENGLISH);</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;userName&quot;, ticket.getCreatedBy().getName());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;ticketId&quot;, ticket.getTicketId());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;title&quot;, ticket.getTitle());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;description&quot;, ticket.getDescription());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;status&quot;, ticket.getStatus().toString());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;createdAt&quot;, ticket.getCreatedAt().format(DATE_FORMATTER));</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;ticketUrl&quot;, baseUrl + &quot;/tickets/&quot; + ticket.getTicketId());</b>
+&nbsp;
+<b class="nc">&nbsp;            String htmlContent = templateEngine.process(&quot;emails/ticket-created&quot;, context);</b>
+&nbsp;
+<b class="nc">&nbsp;            sendHtmlEmail(</b>
+<b class="nc">&nbsp;                    ticket.getCreatedBy().getEmail(),</b>
+<b class="nc">&nbsp;                    &quot;Ticket #&quot; + ticket.getTicketId() + &quot; Created - &quot; + ticket.getTitle(),</b>
+&nbsp;                    htmlContent
+&nbsp;            );
+&nbsp;
+&nbsp;        } catch (Exception e) {
+<b class="nc">&nbsp;            logger.error(e.getMessage());</b>
+<b class="nc">&nbsp;            throw new EmailDeliveryException(&quot;Failed to send ticket created email&quot;);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    @Async
+&nbsp;    public void sendTicketAssignedEmail(Ticket ticket, AppUser assignedTo) {
+<b class="nc">&nbsp;        if (isEmailDisabled()) return;</b>
+&nbsp;        try {
+<b class="nc">&nbsp;            Context context = new Context(Locale.ENGLISH);</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;managerName&quot;, assignedTo.getName());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;ticketId&quot;, ticket.getTicketId());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;title&quot;, ticket.getTitle());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;description&quot;, ticket.getDescription());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;status&quot;, ticket.getStatus().toString());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;createdBy&quot;, ticket.getCreatedBy().getName());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;assignedAt&quot;, ticket.getUpdatedAt().format(DATE_FORMATTER));</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;ticketUrl&quot;, baseUrl + &quot;/tickets/&quot; + ticket.getTicketId());</b>
+&nbsp;
+<b class="nc">&nbsp;            String htmlContent = templateEngine.process(&quot;emails/ticket-assigned&quot;, context);</b>
+&nbsp;
+<b class="nc">&nbsp;            sendHtmlEmail(</b>
+<b class="nc">&nbsp;                    assignedTo.getEmail(),</b>
+<b class="nc">&nbsp;                    &quot;New Ticket Assigned to You - #&quot; + ticket.getTicketId(),</b>
+&nbsp;                    htmlContent
+&nbsp;            );
+&nbsp;
+&nbsp;        } catch (Exception e) {
+<b class="nc">&nbsp;            logger.error(e.getMessage());</b>
+<b class="nc">&nbsp;            throw new EmailDeliveryException(&quot;Failed to send ticket assigned email&quot;);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    @Async
+&nbsp;    public void sendTicketValidatedEmail(Ticket ticket) {
+<b class="nc">&nbsp;        if (isEmailDisabled()) return;</b>
+&nbsp;        try {
+<b class="nc">&nbsp;            Context context = new Context(Locale.ENGLISH);</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;userName&quot;, ticket.getCreatedBy().getName());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;ticketId&quot;, ticket.getTicketId());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;title&quot;, ticket.getTitle());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;validatedBy&quot;,</b>
+<b class="nc">&nbsp;                    ticket.getValidatedBy() != null ? ticket.getValidatedBy().getName() : &quot;System&quot;);</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;validatedAt&quot;, ticket.getValidatedAt().format(DATE_FORMATTER));</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;comment&quot;,</b>
+<b class="nc">&nbsp;                    ticket.getValidationComment() != null ? ticket.getValidationComment() : &quot;No comment provided&quot;);</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;ticketUrl&quot;, baseUrl + &quot;/tickets/&quot; + ticket.getTicketId());</b>
+&nbsp;
+<b class="nc">&nbsp;            String htmlContent = templateEngine.process(&quot;emails/ticket-validated&quot;, context);</b>
+&nbsp;
+<b class="nc">&nbsp;            sendHtmlEmail(</b>
+<b class="nc">&nbsp;                    ticket.getCreatedBy().getEmail(),</b>
+<b class="nc">&nbsp;                    &quot;Ticket #&quot; + ticket.getTicketId() + &quot; Validated&quot;,</b>
+&nbsp;                    htmlContent
+&nbsp;            );
+&nbsp;
+&nbsp;            // Notify all client users
+<b class="nc">&nbsp;            ticket.getClients().forEach(client -&gt; {</b>
+<b class="nc">&nbsp;                if (client.getEmployees() != null) {</b>
+<b class="nc">&nbsp;                    client.getEmployees().forEach(user -&gt; {</b>
+<b class="nc">&nbsp;                        if (!user.getEmail().equals(ticket.getCreatedBy().getEmail())) {</b>
+<b class="nc">&nbsp;                            sendHtmlEmail(user.getEmail(),</b>
+<b class="nc">&nbsp;                                    &quot;Ticket #&quot; + ticket.getTicketId() + &quot; Validated&quot;,</b>
+&nbsp;                                    htmlContent);
+&nbsp;                        }
+&nbsp;                    });
+&nbsp;                }
+&nbsp;            });
+&nbsp;
+&nbsp;        } catch (Exception e) {
+<b class="nc">&nbsp;            logger.error(e.getMessage());</b>
+<b class="nc">&nbsp;            throw new EmailDeliveryException(&quot;Failed to send ticket validated email&quot;);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    @Async
+&nbsp;    public void sendTicketRejectedEmail(Ticket ticket) {
+<b class="nc">&nbsp;        if (isEmailDisabled()) return;</b>
+&nbsp;        try {
+<b class="nc">&nbsp;            Context context = new Context(Locale.ENGLISH);</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;userName&quot;, ticket.getCreatedBy().getName());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;ticketId&quot;, ticket.getTicketId());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;title&quot;, ticket.getTitle());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;rejectedBy&quot;,</b>
+<b class="nc">&nbsp;                    ticket.getValidatedBy() != null ? ticket.getValidatedBy().getName() : &quot;System&quot;);</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;rejectedAt&quot;, ticket.getValidatedAt().format(DATE_FORMATTER));</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;reason&quot;,</b>
+<b class="nc">&nbsp;                    ticket.getValidationComment() != null ? ticket.getValidationComment() : &quot;No reason provided&quot;);</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;ticketUrl&quot;, baseUrl + &quot;/tickets/&quot; + ticket.getTicketId());</b>
+&nbsp;
+<b class="nc">&nbsp;            String htmlContent = templateEngine.process(&quot;emails/ticket-rejected&quot;, context);</b>
+&nbsp;
+<b class="nc">&nbsp;            sendHtmlEmail(</b>
+<b class="nc">&nbsp;                    ticket.getCreatedBy().getEmail(),</b>
+<b class="nc">&nbsp;                    &quot;Ticket #&quot; + ticket.getTicketId() + &quot; Rejected&quot;,</b>
+&nbsp;                    htmlContent
+&nbsp;            );
+&nbsp;
+&nbsp;        } catch (Exception e) {
+<b class="nc">&nbsp;            logger.error(e.getMessage());</b>
+<b class="nc">&nbsp;            throw new EmailDeliveryException(&quot;Failed to send ticket rejected email:&quot;);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    @Async
+&nbsp;    public void sendClientSuspendedEmail(Client client) {
+<b class="nc">&nbsp;        if (isEmailDisabled()) return;</b>
+&nbsp;        try {
+<b class="nc">&nbsp;            Context context = new Context(Locale.ENGLISH);</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;companyName&quot;, client.getCompany());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;clientName&quot;, client.getName());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;suspendedAt&quot;, client.getSuspendedAt().format(DATE_FORMATTER));</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;reason&quot;,</b>
+<b class="nc">&nbsp;                    client.getSuspensionReason() != null ? client.getSuspensionReason() : &quot;No specific reason provided&quot;);</b>
+&nbsp;
+<b class="nc">&nbsp;            String htmlContent = templateEngine.process(&quot;emails/client-suspended&quot;, context);</b>
+&nbsp;
+<b class="nc">&nbsp;            if (client.getEmployees() != null) {</b>
+<b class="nc">&nbsp;                client.getEmployees().forEach(user -&gt; {</b>
+<b class="nc">&nbsp;                    sendHtmlEmail(</b>
+<b class="nc">&nbsp;                            user.getEmail(),</b>
+&nbsp;                            &quot;URGENT: Account Suspended - Action Required&quot;,
+&nbsp;                            htmlContent
+&nbsp;                    );
+&nbsp;                });
+&nbsp;            }
+&nbsp;
+&nbsp;        } catch (Exception e) {
+<b class="nc">&nbsp;            logger.error(e.getMessage());</b>
+<b class="nc">&nbsp;            throw new EmailDeliveryException(&quot;Failed to send client suspended email&quot;);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    @Async
+&nbsp;    public void sendClientReactivatedEmail(Client client) {
+<b class="nc">&nbsp;        if (isEmailDisabled()) return;</b>
+&nbsp;        try {
+<b class="nc">&nbsp;            Context context = new Context(Locale.ENGLISH);</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;companyName&quot;, client.getCompany());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;clientName&quot;, client.getName());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;loginUrl&quot;, baseUrl + &quot;/login&quot;);</b>
+&nbsp;
+<b class="nc">&nbsp;            String htmlContent = templateEngine.process(&quot;emails/client-reactivated&quot;, context);</b>
+&nbsp;
+<b class="nc">&nbsp;            if (client.getEmployees() != null) {</b>
+<b class="nc">&nbsp;                client.getEmployees().forEach(user -&gt; {</b>
+<b class="nc">&nbsp;                    sendHtmlEmail(</b>
+<b class="nc">&nbsp;                            user.getEmail(),</b>
+&nbsp;                            &quot;Account Reactivated - Welcome Back!&quot;,
+&nbsp;                            htmlContent
+&nbsp;                    );
+&nbsp;                });
+&nbsp;            }
+&nbsp;
+&nbsp;        } catch (Exception e) {
+<b class="nc">&nbsp;            logger.error(e.getMessage());</b>
+<b class="nc">&nbsp;            throw new EmailDeliveryException(&quot;Failed to send client reactivated email&quot;);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    @Async
+&nbsp;    public void sendPasswordChangedEmail(AppUser user) {
+<b class="nc">&nbsp;        if (isEmailDisabled()) return;</b>
+&nbsp;        try {
+<b class="nc">&nbsp;            Context context = new Context(Locale.ENGLISH);</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;userName&quot;, user.getName());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;changedAt&quot;,</b>
+<b class="nc">&nbsp;                    java.time.LocalDateTime.now().format(DATE_FORMATTER));</b>
+&nbsp;
+<b class="nc">&nbsp;            String htmlContent = templateEngine.process(&quot;emails/password-changed&quot;, context);</b>
+&nbsp;
+<b class="nc">&nbsp;            sendHtmlEmail(</b>
+<b class="nc">&nbsp;                    user.getEmail(),</b>
+&nbsp;                    &quot;Password Changed Successfully&quot;,
+&nbsp;                    htmlContent
+&nbsp;            );
+&nbsp;
+&nbsp;        } catch (Exception e) {
+<b class="nc">&nbsp;            logger.error(e.getMessage());</b>
+<b class="nc">&nbsp;            throw new EmailDeliveryException(&quot;Failed to send password changed email&quot;);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    @Async
+&nbsp;    public void sendWelcomeEmail(AppUser user, String tempPassword) {
+<b class="nc">&nbsp;        if (emailEnabled == null || !emailEnabled) {</b>
+<b class="nc">&nbsp;            System.out.println(&quot;Email sending is disabled&quot;);</b>
+&nbsp;            return;
+&nbsp;        }
+&nbsp;
+&nbsp;        try {
+<b class="nc">&nbsp;            Context context = new Context(Locale.ENGLISH);</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;userName&quot;, user.getName());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;email&quot;, user.getEmail());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;tempPassword&quot;, tempPassword);</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;role&quot;, user.getRoles().toString());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;company&quot;,</b>
+<b class="nc">&nbsp;                    user.getClient() != null ? user.getClient().getName() : &quot;N/A (Admin)&quot;);</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;loginUrl&quot;, baseUrl + &quot;/login&quot;);</b>
+&nbsp;
+<b class="nc">&nbsp;            String htmlContent = templateEngine.process(&quot;emails/welcome-user&quot;, context);</b>
+&nbsp;
+<b class="nc">&nbsp;            sendHtmlEmail(</b>
+<b class="nc">&nbsp;                    user.getEmail(),</b>
+&nbsp;                    &quot;Welcome to Ticket Management System!&quot;,
+&nbsp;                    htmlContent
+&nbsp;            );
+&nbsp;
+&nbsp;        } catch (Exception e) {
+<b class="nc">&nbsp;            logger.error(e.getMessage());</b>
+<b class="nc">&nbsp;            throw new EmailDeliveryException(&quot;Failed to send welcome email&quot;);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    @Async
+&nbsp;    public void sendIncidentNotification(Ticket incident) {
+<b class="nc">&nbsp;        if (isEmailDisabled()) return;</b>
+&nbsp;        try {
+<b class="nc">&nbsp;            Context context = new Context(Locale.ENGLISH);</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;incidentId&quot;, incident.getTicketId());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;title&quot;, incident.getTitle());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;description&quot;, incident.getDescription());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;reportedBy&quot;, incident.getCreatedBy().getName());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;reportedAt&quot;, incident.getCreatedAt().format(DATE_FORMATTER));</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;status&quot;, incident.getStatus().toString());</b>
+<b class="nc">&nbsp;            context.setVariable(&quot;ticketUrl&quot;, baseUrl + &quot;/tickets/&quot; + incident.getTicketId());</b>
+&nbsp;
+<b class="nc">&nbsp;            String htmlContent = templateEngine.process(&quot;emails/incident-notification&quot;, context);</b>
+&nbsp;
+<b class="nc">&nbsp;            incident.getClients().forEach(client -&gt; {</b>
+<b class="nc">&nbsp;                if (client.getEmployees() != null) {</b>
+<b class="nc">&nbsp;                    client.getEmployees().forEach(user -&gt; {</b>
+<b class="nc">&nbsp;                        sendHtmlEmail(</b>
+<b class="nc">&nbsp;                                user.getEmail(),</b>
+<b class="nc">&nbsp;                                &quot;SYSTEM INCIDENT: &quot; + incident.getTitle(),</b>
+&nbsp;                                htmlContent
+&nbsp;                        );
+&nbsp;                    });
+&nbsp;                }
+&nbsp;            });
+&nbsp;
+&nbsp;        } catch (Exception e) {
+<b class="nc">&nbsp;            logger.error(e.getMessage());</b>
+<b class="nc">&nbsp;            throw new EmailDeliveryException(&quot;Failed to send incident notification email&quot;);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private void sendHtmlEmail(String to, String subject, String htmlContent) {
+&nbsp;        try {
+<b class="nc">&nbsp;            MimeMessage message = mailSender.createMimeMessage();</b>
+<b class="nc">&nbsp;            MimeMessageHelper helper = new MimeMessageHelper(message, true, &quot;UTF-8&quot;);</b>
+&nbsp;
+<b class="nc">&nbsp;            helper.setFrom(fromEmail);</b>
+<b class="nc">&nbsp;            helper.setTo(to);</b>
+<b class="nc">&nbsp;            helper.setSubject(subject);</b>
+<b class="nc">&nbsp;            helper.setText(htmlContent, true);</b>
+&nbsp;
+<b class="nc">&nbsp;            mailSender.send(message);</b>
+<b class="nc">&nbsp;            System.out.println(&quot;Email sent successfully to: &quot; + to);</b>
+&nbsp;
+&nbsp;        } catch (MessagingException e) {
+<b class="nc">&nbsp;            System.err.println(&quot;Failed to send email to &quot; + to + &quot;: &quot; + e.getMessage());</b>
+<b class="nc">&nbsp;            e.printStackTrace();</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private boolean isEmailDisabled(){
+<b class="nc">&nbsp;        if (emailEnabled == null || !emailEnabled) {</b>
+<b class="nc">&nbsp;            logger.info(&quot;Email sending is disabled&quot;);</b>
+<b class="nc">&nbsp;            return true;</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return false;</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-09-30 23:41</div>
+</div>
+</body>
+</html>

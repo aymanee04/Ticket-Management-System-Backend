@@ -7,6 +7,7 @@ public enum ClientStatus implements Serializable {
     ACTIVE,
     INACTIVE,
     SUSPENDED;
+    
     @Serial
     private static final long serialVersionUID = 1L;
 }
