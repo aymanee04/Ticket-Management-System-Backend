@@ -310,7 +310,7 @@ public class TicketServiceImpl implements TicketService {
 ///
     @Override
     public Page<TicketDTO> getTicketsPagedForUser(AppUser currentUser, Pageable pageable) {
-        if (isAdminOrManager(currentUser)) {
+        if (currentUser.getRoles().contains(Role.ADMIN)) {
             return getAllTicketsWithPagination(pageable);
         }
         if (currentUser.getClient() != null) {
